@@ -2,27 +2,54 @@
 use strict;
 use warnings;
 
-my $dir;
-my $path = $ARGV[0];
-opendir($dir, $path);
+#for a file at a given path, returns its content
+sub getContent {
+	my $path = $_[0];
 
-#stores file names with file content from files in $dir into %files
-my %files;
-while (my $file = readdir($dir)) {
-	my $filePath = "$path/$file";
-	if (-f $filePath) {
-		open(my $handle, $filePath);
-		my $content = <$handle>;
-		close($handle);
-
-		chomp $content;
-		$files{$file} = $content;
+	open(my $handle, $path);
+	my $content = "";
+	while (my $line = <$handle>) {
+		$content = "$content$line";
 	}
+
+	chomp($content);
+	close($handle);
+	return $content
 }
 
-closedir($dir);
+#for files at a given path, returns a map of file names to file contents
+sub getFiles {
+	my $path = $_[0];
+
+	my $dir;
+	opendir($dir, $path);
+
+	my %files;
+	while (my $file = readdir($dir)) {
+		$file = "$path/$file";
+		
+		#if it is a file, grab its content and store it in the map
+		if (-f $file) {
+			my $content = getContent($file);
+			$files{$file} = $content;
+		}
+		#if it is a directory, get the files from it and store them in the map
+		elsif (-d $file and $file ne "$path/." and $file ne"$path/.." ) {
+			#closedir($dir); ?
+			my %grandfiles = getFiles($file);
+			%files = (%files, %grandfiles);
+			#opendir($dir, $path); ?
+		}
+	}
+
+	closedir($dir);
+	return %files;
+}
+
+my $path = $ARGV[0];
+my %files = getFiles($path);
 
 #prints contents of %files
 while ((my $file, my $content) = each(%files)) {
-	print("$file: $content\n");
+	print("--------\n$file\n--------\n$content\n");
 }
