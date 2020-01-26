@@ -46,6 +46,18 @@ sub getFiles {
 	return %files;
 }
 
+#in a given file content, finds instances of [[*]] and replaces it with corresponding file content
+sub findAndReplace {
+	my $content = $_[0];
+
+	while ($content =~ /\[\[[0-9a-zA-Z._\-]+\]\]/) {
+		$content = substr($content, 0, $-[0]) . "-FOUND-" . substr($content, $+[0]);
+	}
+	print("$content\n");
+}
+
+findAndReplace("bazinga shakira [[template.html]] sixteen [[thirty3.html]]");
+
 my $path = $ARGV[0];
 my %files = getFiles($path);
 
