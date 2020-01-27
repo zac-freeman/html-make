@@ -26,16 +26,22 @@ sub getFiles {
 
 	my %files;
 	while (my $file = readdir($dir)) {
-		$file = "$path/$file";
+		my $filePath = "$path/$file";
 		
-		#if it is a file, grab its content and store it in the map
-		if (-f $file) {
-			my $content = getContent($file);
+		#if it is a file, check if the file name is unique,
+		#if it is unique, grab its content and store it in the map
+		#if it isn't unique, throw an error about a file name collision
+		if (-f $filePath) {
+			if (exists($files{$file})) {
+				die("ERROR: Found multiple files with name \"" . $file . "\"\n");
+			}
+			my $content = getContent($filePath);
 			$files{$file} = $content;
 		}
-		#if it is a directory, get the files from it and store them in the map
-		elsif (-d $file and $file ne "$path/." and $file ne"$path/.." ) {
-			my %grandfiles = getFiles($file);
+		#if it is a directory other than the relative directories (., ..),
+		#get the files from it and store them in the map
+		elsif (-d $filePath and $file ne "." and $file ne ".." ) {
+			my %grandfiles = getFiles($filePath);
 			%files = (%files, %grandfiles);
 		}
 	}
