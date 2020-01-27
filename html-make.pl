@@ -33,7 +33,7 @@ sub getFiles {
 		#if it isn't unique, throw an error about a file name collision
 		if (-f $filePath) {
 			if (exists($files{$file})) {
-				die("ERROR: Found multiple files with name \"" . $file . "\"\n");
+				die("ERROR: Found multiple files with name \"$file\"\n");
 			}
 			my $content = getContent($filePath);
 			$files{$file} = $content;
@@ -50,22 +50,31 @@ sub getFiles {
 	return %files;
 }
 
-#in a given file content, finds instances of [[*]] and replaces it with corresponding file content
+#for a given file content and a given map reference, finds instances of [[*]],
+#replaces it with the corresponding file content, and returns the updated file content
 sub findAndReplace {
 	my $content = $_[0];
+	my $files = $_[1];
 
 	while ($content =~ /\[\[[0-9a-zA-Z._\-]+\]\]/) {
-		$content = substr($content, 0, $-[0]) . "-FOUND-" . substr($content, $+[0]);
+		my $start = $-[0];
+		my $end = $+[0];
+		my $file = substr($content, $start + 2, $end - $start - 4);
+		if (!exists($files->{$file})) {
+			die("ERROR: No file found with name \"$file\"\n");
+		}
+		$files->{$file} = findAndReplace($files->{$file}, $files);
+		$content = substr($content, 0, $start) . $files->{$file} . substr($content, $end);
 	}
-	print("$content\n");
+	return $content;
 }
 
-findAndReplace("bazinga shakira [[template.html]] sixteen [[thirty3.html]]");
 
 my $path = $ARGV[0];
 my %files = getFiles($path);
 
-#prints contents of %files
-while ((my $file, my $content) = each(%files)) {
-	print("--------\n$file\n--------\n$content\n");
+findAndReplace("[[template.html]]", \%files);
+
+while((my $file, my $content) = each(%files)) {
+	print("\n--------\n$file:\n$content\n");
 }
