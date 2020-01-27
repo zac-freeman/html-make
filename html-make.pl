@@ -35,10 +35,8 @@ sub getFiles {
 		}
 		#if it is a directory, get the files from it and store them in the map
 		elsif (-d $file and $file ne "$path/." and $file ne"$path/.." ) {
-			#closedir($dir); ?
 			my %grandfiles = getFiles($file);
 			%files = (%files, %grandfiles);
-			#opendir($dir, $path); ?
 		}
 	}
 
