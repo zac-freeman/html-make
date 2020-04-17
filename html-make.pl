@@ -134,3 +134,38 @@ while((my $file, my $content) = each(%files)) {
 # syntax consideration:
 # 	Should be easy to understand and write. Should intersect with the syntax of other languages
 #	(especially HTML and CSS)
+
+#matches DEPENDENCY(DEPENDENCY_NAME) and captures DEPENDENCY_NAME into $1
+my $dependencyPattern = "DEPENDENCY\(([0-9a-zA-Z._\-]+)\)";
+
+# TODO
+my $identityPattern = "";
+
+# TODO
+my $locationPattern = "";
+
+sub populateTemplates {}
+
+# finds instances of the given dependencyPattern within the given template and replace the each of
+# the found instances with the corresponding element in the given templates map
+sub populateTemplate {
+	my $template = $_[0];
+	my $templates = $_[1];
+	my $dependencyPattern = $_[2];
+
+	while ($template =~ /$dependencyPattern/) {
+		my $start = $-[0];
+		my $end = $+[0];
+		my $dependencyName = $1;
+
+		my $dependency = \$templates->{$dependencyName};
+		if (!defined($$dependency)) {
+			die("ERROR: No template found in templates map with name \"$dependencyName\"\n");
+		}
+
+		$$dependency = populateTemplate($$dependency, $templates, $dependencyPattern);
+		$template = substr($template, 0, $start) . $$dependency . substr($template, $end);
+	}
+
+	return $template;
+}
