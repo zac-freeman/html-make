@@ -152,6 +152,7 @@ sub populateTemplate {
 	my $template = $_[0];
 	my $templates = $_[1];
 	my $dependencyPattern = $_[2];
+	my $parents = $_[3]; # TODO: list of parent templates that depend on this template (AKA the call stack), if its undef, ignore it
 
 	while ($template =~ /$dependencyPattern/) {
 		my $start = $-[0];
