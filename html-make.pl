@@ -152,21 +152,32 @@ sub populateTemplate {
 	my $template = $_[0];			# contents of a template
 	my $templates = $_[1];			# REFERENCE to a hash corresponding template names to template contents
 	my $dependencyPattern = $_[2];	# regex to capture dependencies declared in the template
-	my @parents = $_[3]; 			# chronological array of names of templates being populated, ignored if UNDEF
+	my @parents = @{$_[3]}; 		# chronological array of names of templates being populated, ignored if empty
 
 	while ($template =~ /$dependencyPattern/) {
 		my $start = $-[0];
 		my $end = $+[0];
 		my $dependencyName = $1;
 
-		if ()
-
-		my $dependency = \$templates->{$dependencyName};
-		if (!defined($$dependency)) {
-			die("ERROR: No template found in templates hash with name \"$dependencyName\"\n");
+		# throw an error if dependencyName is already present in parents array
+		if (grep(/^$dependencyName$/, @parents)) {
+			die("ERROR: Repeat found in " . join(" -> ", @parents) . " -> " . $dependencyName . "\n");
 		}
 
-		$$dependency = populateTemplate($$dependency, $templates, $dependencyPattern);
+		# if the parents array is empty, add dependencyName to the end of it
+		if (@parents != 0) {
+			push (@parents, $dependencyName);
+		}
+
+		# get a reference to the contents corresponding to the dependencyName,
+		# throw an error if the contents aren't present in the templates hash
+		my $dependency = \$templates->{$dependencyName};
+		if (!defined($$dependency)) {
+			die("ERROR: No template found in templates hash with name \"" . $dependencyName . "\"\n");
+		}
+
+		# populate the dependency contents, then insert it in the place of the dependency declaration
+		$$dependency = populateTemplate($$dependency, $templates, $dependencyPattern, \@parents);
 		$template = substr($template, 0, $start) . $$dependency . substr($template, $end);
 	}
 
