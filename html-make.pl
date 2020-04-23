@@ -135,7 +135,7 @@ while((my $file, my $content) = each(%files)) {
 # 	Should be easy to understand and write. Should intersect with the syntax of other languages
 #	(especially HTML and CSS)
 
-#matches DEPENDENCY(DEPENDENCY_NAME) and captures DEPENDENCY_NAME into $1
+# matches DEPENDENCY(DEPENDENCY_NAME) and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = "DEPENDENCY\(([0-9a-zA-Z._\-]+)\)";
 
 # TODO
@@ -147,21 +147,23 @@ my $locationPattern = "";
 sub populateTemplates {}
 
 # finds instances of the given dependencyPattern within the given template and replace the each of
-# the found instances with the corresponding element in the given templates map
+# the found instances with the corresponding element in the given templates hash
 sub populateTemplate {
-	my $template = $_[0];
-	my $templates = $_[1];
-	my $dependencyPattern = $_[2];
-	my $parents = $_[3]; # TODO: list of parent templates that depend on this template (AKA the call stack), if its undef, ignore it
+	my $template = $_[0];			# contents of a template
+	my $templates = $_[1];			# REFERENCE to a hash corresponding template names to template contents
+	my $dependencyPattern = $_[2];	# regex to capture dependencies declared in the template
+	my @parents = $_[3]; 			# chronological array of names of templates being populated, ignored if UNDEF
 
 	while ($template =~ /$dependencyPattern/) {
 		my $start = $-[0];
 		my $end = $+[0];
 		my $dependencyName = $1;
 
+		if ()
+
 		my $dependency = \$templates->{$dependencyName};
 		if (!defined($$dependency)) {
-			die("ERROR: No template found in templates map with name \"$dependencyName\"\n");
+			die("ERROR: No template found in templates hash with name \"$dependencyName\"\n");
 		}
 
 		$$dependency = populateTemplate($$dependency, $templates, $dependencyPattern);
