@@ -146,8 +146,9 @@ my $locationPattern = "";
 
 sub populateTemplates {}
 
-# finds instances of the given dependencyPattern within the given template and replace the each of
-# the found instances with the corresponding element in the given templates hash
+# TODO: write tests this beautiful beast
+# find instances of the given dependencyPattern within the given template and replace each of the found instances
+# with the contents corresponding to the instance's dependencyName in the given templates hash
 sub populateTemplate {
 	my $template = $_[0];			# contents of a template
 	my $templates = $_[1];			# REFERENCE to a hash corresponding template names to template contents
