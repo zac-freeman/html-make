@@ -80,6 +80,7 @@ sub populateTemplate {
 	my @parents = @{$ARG[3]}; 			# chronological array of names of templates being populated, ignored if empty
 
 	while ($template =~ $dependencyPattern) {
+		# get the start position, end position, and captured name of the regex match
 		my $start = $LAST_MATCH_START[0];
 		my $end = $LAST_MATCH_END[0];
 		my $dependencyName = $1; # TODO: consider converting to substr function
@@ -109,4 +110,4 @@ sub populateTemplate {
 	return $template;
 }
 
-1;
+return 1; # to enable invoking this script with require
