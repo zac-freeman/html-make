@@ -59,7 +59,7 @@ use warnings;
 #	(especially HTML and CSS)
 
 # matches DEPENDENCY(DEPENDENCY_NAME) and captures DEPENDENCY_NAME into $1
-my $dependencyPattern = "DEPENDENCY\(([0-9a-zA-Z._\-]+)\)";
+my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # TODO
 my $identityPattern = "";
@@ -78,14 +78,14 @@ sub populateTemplate {
 	my $dependencyPattern = $_[2];	# regex to capture dependencies declared in the template
 	my @parents = @{$_[3]}; 		# chronological array of names of templates being populated, ignored if empty
 
-	while ($template =~ /$dependencyPattern/) {
+	while ($template =~ $dependencyPattern) {
 		my $start = $-[0];
 		my $end = $+[0];
 		my $dependencyName = $1;
 
 		# throw an error if dependencyName is already present in parents array
 		if (grep(/^$dependencyName$/, @parents)) {
-			die("ERROR: Repeat found in " . join(" -> ", @parents) . " -> " . $dependencyName . "\n");
+			die("ERROR: Cyclic dependency found in " . join(" -> ", @parents) . " -> " . $dependencyName . "\n");
 		}
 
 		# if the parents array is empty, add dependencyName to the end of it
