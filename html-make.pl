@@ -55,6 +55,10 @@
 #	(especially HTML and CSS)
 
 # matches DEPENDENCY(DEPENDENCY_NAME) and captures DEPENDENCY_NAME into $1
+#!/usr/bin/perl
+use strict;
+use warnings;
+
 my $dependencyPattern = "DEPENDENCY\(([0-9a-zA-Z._\-]+)\)";
 
 # TODO
