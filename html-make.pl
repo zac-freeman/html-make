@@ -1,3 +1,7 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
 # new function organization:
 #
 #	Keep IO and non-IO functions seperate (haskell, eat your heart out) for testing purposes. I think
@@ -55,10 +59,6 @@
 #	(especially HTML and CSS)
 
 # matches DEPENDENCY(DEPENDENCY_NAME) and captures DEPENDENCY_NAME into $1
-#!/usr/bin/perl
-use strict;
-use warnings;
-
 my $dependencyPattern = "DEPENDENCY\(([0-9a-zA-Z._\-]+)\)";
 
 # TODO
@@ -107,3 +107,5 @@ sub populateTemplate {
 
 	return $template;
 }
+
+1;
