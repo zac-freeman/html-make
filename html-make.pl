@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use English;
 
 # new function organization:
 #
@@ -73,15 +74,15 @@ sub populateTemplates {}
 # find instances of the given dependencyPattern within the given template and replace each of the found instances
 # with the contents corresponding to the instance's dependencyName in the given templates hash
 sub populateTemplate {
-	my $template = $_[0];			# contents of a template
-	my $templates = $_[1];			# REFERENCE to a hash corresponding template names to template contents
-	my $dependencyPattern = $_[2];	# regex to capture dependencies declared in the template
-	my @parents = @{$_[3]}; 		# chronological array of names of templates being populated, ignored if empty
+	my $template = $ARG[0];				# contents of a template
+	my $templates = $ARG[1];			# REFERENCE to a hash corresponding template names to template contents
+	my $dependencyPattern = $ARG[2];	# regex to capture dependencies declared in the template
+	my @parents = @{$ARG[3]}; 			# chronological array of names of templates being populated, ignored if empty
 
 	while ($template =~ $dependencyPattern) {
-		my $start = $-[0];
-		my $end = $+[0];
-		my $dependencyName = $1;
+		my $start = $LAST_MATCH_START[0];
+		my $end = $LAST_MATCH_END[0];
+		my $dependencyName = $1; # TODO: consider converting to substr function
 
 		# throw an error if dependencyName is already present in parents array
 		if (grep(/^$dependencyName$/, @parents)) {
