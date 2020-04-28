@@ -55,7 +55,7 @@ $message = "populateTemplate: if provided templates hash containing single templ
 $template = $templates{"singleTemplate"};
 @parents = ("singleTemplate");
 $expected = $template;
-$actual;
+$actual = "";
 eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
 $actual = $EVAL_ERROR if $EVAL_ERROR;
 assertStringEquality($expected, $actual, $message);
