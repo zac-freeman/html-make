@@ -88,7 +88,7 @@ sub populateTemplate {
 			die("ERROR: Cyclic dependency found in " . join(" -> ", @parents) . " -> " . $dependencyName . "\n");
 		}
 
-		# if the parents array is empty, add dependencyName to the end of it
+		# if the parents array isn't empty, add dependencyName to the end of it
 		if (@parents != 0) {
 			push(@parents, $dependencyName);
 		}
