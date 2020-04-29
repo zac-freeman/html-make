@@ -17,13 +17,13 @@ sub assertStringEquality {
 	my $message = $_[2];
 
 	if ($expected eq $actual) {
-		$successes = $successes + 1;
 		print("SUCCESS - " . $message . "\n");
+		return 1;
 	} else {
-		$failures = $failures + 1;
 		print("FAILURE - " . $message . "\n");
 		print("    EXPECTED - " . $expected . "\n");
 		print("    ACTUAL   - " . $actual . "\n");
+		return 0;
 	}
 }
 
@@ -32,33 +32,82 @@ sub assertStringEquality {
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 
-# TODO: test cyclic dependency handling and figure out a better way to organize tests
 # populateTemplate tests
-my $message = "populateTemplate: if provided templates hash containing a present dependency and otherwise valid parameters, returns expected template content";
-my %templates = ( "rootTemplate" => "sheldon says DEPENDENCY(\"childTemplate\")",
-				  "childTemplate" => "bazinga");
-my $template = $templates{"rootTemplate"};
-my @parents = ("rootTemplate");
-my $expected = "sheldon says bazinga";
-my $actual = "";
-eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
-$actual = $EVAL_ERROR if $EVAL_ERROR;
-assertStringEquality($expected, $actual, $message);
+{
+	my $message = "populateTemplate: if provided templates hash containing a present dependency and otherwise valid parameters, returns expected template content";
+	my %templates = ( "rootTemplate" => "sheldon says DEPENDENCY(\"childTemplate\")",
+					  "childTemplate" => "bazinga");
+	my $template = $templates{"rootTemplate"};
+	my @parents = ("rootTemplate");
+	my $expected = "sheldon says bazinga";
+	my $actual;
+	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
 
-$message = "populateTemplate: if provided templates hash containing a present dependency and otherwise valid parameters, does not modify original template parameter";
-$expected = "sheldon says DEPENDENCY(\"childTemplate\")";
-$actual = $template;
-assertStringEquality($expected, $actual, $message);
+{
+	my $message = "populateTemplate: if provided an empty parents array and otherwise valid parameters, returns expected template content";
+	my %templates = ( "rootTemplate" => "sheldon says DEPENDENCY(\"childTemplate\")",
+					  "childTemplate" => "bazinga");
+	my $template = $templates{"rootTemplate"};
+	my @parents;
+	my $expected = "sheldon says bazinga";
+	my $actual;
+	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
 
-$message = "populateTemplate: if provided templates hash containing single template with no dependencies and otherwise valid parameters, returns original template content";
-%templates = ( "singleTemplate" => "all the single templates");
-$template = $templates{"singleTemplate"};
-@parents = ("singleTemplate");
-$expected = $template;
-$actual = "";
-eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
-$actual = $EVAL_ERROR if $EVAL_ERROR;
-assertStringEquality($expected, $actual, $message);
+{
+	my $message = "populateTemplate: if provided templates hash containing a present dependency and otherwise valid parameters, does not modify original template parameter";
+	my %templates = ( "rootTemplate" => "sheldon says DEPENDENCY(\"childTemplate\")",
+					  "childTemplate" => "bazinga");
+	my $template = $templates{"rootTemplate"};
+	my @parents = ("rootTemplate");
+	my $expected = $templates{"rootTemplate"};
+	eval { populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
+	my $actual = $templates{"rootTemplate"};
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "populateTemplate: if provided templates hash containing a cyclic dependency and otherwise valid parameters, throws expected exception";
+	my %templates = ( "rootTemplate" => "sheldon says DEPENDENCY(\"childTemplate\")",
+					  "childTemplate" => "penny says DEPENDENCY(\"rootTemplate\")");
+	my $template = $templates{"rootTemplate"};
+	my @parents = ("rootTemplate");
+	my $expected = "ERROR: Cyclic dependency found in rootTemplate -> childTemplate -> rootTemplate\n";
+	my $actual;
+	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "populateTemplate: if provided templates hash containing single template with no dependencies and otherwise valid parameters, returns original template content";
+	my %templates = ( "singleTemplate" => "all the single templates");
+	my $template = $templates{"singleTemplate"};
+	my @parents = ("singleTemplate");
+	my $expected = $template;
+	my $actual;
+	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "populateTemplate: if provided templates hash containing a template with a missing dependency and otherwise valid parameters, throws expected exception";
+	my %templates = ( "singleTemplate" => "all the lonely templates, DEPENDENCY(\"where\") do they all come from");
+	my $template = $templates{"singleTemplate"};
+	my @parents = ("singleTemplate");
+	my $expected = "ERROR: No template found in templates hash with name \"where\"\n";
+	my $actual;
+	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
 
 
 # final results printout
