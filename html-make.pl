@@ -40,6 +40,8 @@ use warnings;
 #										   templates map
 #		locateTemplates(Map templates) - generates a map from a templates map that associates the final
 #										 filePath with the final fileContent
+#		identifyTemplates(Map templates) - generates a hash corresponding template names to template
+#										   contents
 #
 #	syntax definitions:
 #		String locationPattern - regex that identifies the final path for the template after
@@ -67,10 +69,23 @@ my $identityPattern = "";
 # TODO
 my $locationPattern = "";
 
-sub populateTemplates {}
+# invoke populateTemplate() once for each template in the given templates hash
+sub populateTemplates {
+	my %templates = %{$_[0]};		# hash corresponding template names to template contents
+	my $dependencyPattern = $_[1];	# regex to capture dependencies declared in the templates
+	my $cycleCheckEnabled = $_[2];	# boolean to enable checking for cyclic dependencies in templates hash
 
-# find instances of the given dependencyPattern within the given template and replace each of the found instances
-# with the contents corresponding to the instance's dependencyName in the given templates hash
+	foreach my $name (keys %templates) {
+		my @parents = $cycleCheckEnabled ? ($name) : ();
+		$templates{$name} = populateTemplate($templates{$name}, \%templates, $dependencyPattern, \@parents);
+	}
+
+	return %templates;
+}
+
+# find instances of the given dependencyPattern within the given template and replace each of the
+# found instances with the contents corresponding to the instance's dependencyName in the given
+# templates hash
 sub populateTemplate {
 	my $template = $_[0];			# contents of a template
 	my $templates = $_[1];			# REFERENCE to a hash corresponding template names to template contents

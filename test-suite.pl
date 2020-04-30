@@ -47,6 +47,21 @@ my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 }
 
 {
+	my $message = "populateTemplate: if provided templates hash with nested, present dependencies and otherwise valid parameters, returns expected template content";
+	my %templates = ( "firstTemplate" => "knock knock, DEPENDENCY(\"secondTemplate\")",
+					  "secondTemplate" => "open up the door, DEPENDENCY(\"thirdTemplate\")",
+					  "thirdTemplate" => "it's real, DEPENDENCY(\"fourthTemplate\")",
+					  "fourthTemplate" => "with the non-stop, pop-pop of stainless steel");
+	my $template = $templates{"firstTemplate"};
+	my @parents = ("firstTemplate");
+	my $expected = "knock knock, open up the door, it's real, with the non-stop, pop-pop of stainless steel";
+	my $actual;
+	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
 	my $message = "populateTemplate: if provided an empty parents array and otherwise valid parameters, returns expected template content";
 	my %templates = ( "rootTemplate" => "sheldon says DEPENDENCY(\"childTemplate\")",
 					  "childTemplate" => "bazinga");
@@ -107,6 +122,22 @@ my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+print("\n");
+
+# populateTemplates tests
+{
+	my $message = "populateTemplates: if provided templates hash with a present dependency and otherwise valid parameters, returns expected templates hash";
+	my %templates = ( "parentTemplate" => "this one DEPENDENCY(\"childTemplate\") is in the middle!",
+					  "childTemplate" => "it is me, the child");
+	my $cycleCheckEnabled = 0;
+	my %expected;	# TODO: write assertHashEquality()
+	my %actual;
+	eval { %actual = populateTemplates(\%templates, $dependencyPattern, $cycleCheckEnabled); };
+	print(%actual);
+	# TODO: how to capture error strings into $actual when it is a hash?
+	# TODO: define an evaluate function that does the eval stuff common to each test, something like "my $actual = evaluate(func, params...);"
 }
 
 
