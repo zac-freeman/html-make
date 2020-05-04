@@ -64,10 +64,38 @@ use warnings;
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # TODO
-my $identityPattern = "";
+my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # TODO
 my $locationPattern = "";
+
+# find an instance of the given identityPattern within the given template, then return the captured
+# name/identity and the template absent the line containing the found instance
+sub identifyTemplate {
+	my $template = $_[0];
+	my $identityPattern = $_[1];
+
+	my $identity;
+	my $instances = 0;
+	while ($template =~ $identityPattern) {
+		my $start = $-[0];
+		my $end = $+[0];
+		$identity = $1;
+
+		$instances++;
+		if ($instances > 1) {
+			die("ERROR: More than one identity declaration found in template first identified as \"" . $identity . "\"\n");
+		}
+
+		# remove the line containing the identity declaration from the template
+	}
+
+	if ($instances < 1) {
+		die("ERROR: No identity declaration found in template.\n");
+	}
+
+	#return identity, template
+}
 
 # invoke populateTemplate() once for each template in the given templates hash
 sub populateTemplates {
@@ -80,7 +108,7 @@ sub populateTemplates {
 		$templates{$name} = populateTemplate($templates{$name}, \%templates, $dependencyPattern, \@parents);
 	}
 
-	return %templates;
+	return \%templates;
 }
 
 # find instances of the given dependencyPattern within the given template and replace each of the

@@ -9,8 +9,12 @@ require "./html-make.pl";
 my $successes = 0;
 my $failures = 0;
 
+# reusable variables
+my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
-# functions for testing assertions
+# tests equality of two given strings
+# if they are equal, prints SUCCESS with given message and returns true (1)
+# if they aren't equal, prints FAILURE with given message and returns false (0)
 sub assertStringEquality {
 	my $expected = $_[0];
 	my $actual = $_[1];
@@ -27,9 +31,12 @@ sub assertStringEquality {
 	}
 }
 
+# sorts hash then maps it to a string representation
+sub stringifyHash {
+	my %hash = %{$_[0]};
 
-# reusable variables
-my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
+	return "\{ " . join(", ", map { "\"$ARG\" => \"$hash{$ARG}\"" } sort { $a cmp $b } keys %hash) . " \}";
+}
 
 
 # populateTemplate tests
@@ -132,12 +139,40 @@ print("\n");
 	my %templates = ( "parentTemplate" => "this one DEPENDENCY(\"childTemplate\") is in the middle!",
 					  "childTemplate" => "it is me, the child");
 	my $cycleCheckEnabled = 0;
-	my %expected;	# TODO: write assertHashEquality()
-	my %actual;
-	eval { %actual = populateTemplates(\%templates, $dependencyPattern, $cycleCheckEnabled); };
-	print(%actual);
-	# TODO: how to capture error strings into $actual when it is a hash?
-	# TODO: define an evaluate function that does the eval stuff common to each test, something like "my $actual = evaluate(func, params...);"
+	my $expected = "\{ \"childTemplate\" => \"it is me, the child\", \"parentTemplate\" => \"this one it is me, the child is in the middle!\" \}";
+	my $actual;
+	eval { $actual = stringifyHash(populateTemplates(\%templates, $dependencyPattern, $cycleCheckEnabled)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "populateTemplates: if provided templates hash with present nested dependencies and otherwise valid parameters, returns expected templates hash";
+	my %templates = ("traffic" => "DEPENDENCY(\"normalCar\") - - DEPENDENCY(\"bugCar\") - - DEPENDENCY(\"normalCar\") - - DEPENDENCY(\"fancyCar\")",
+					 "policeChase" => "DEPENDENCY(\"policeCarSquad\") - - - DEPENDENCY(\"normalCar\")",
+					 "policeCarSquad" => "DEPENDENCY(\"policeCar\") DEPENDENCY(\"policeCar\")",
+					 "policeCar" => "[8]",
+					 "normalCar" => "[[]]",
+					 "bugCar" => "(())",
+					 "fancyCar" => "[{}]");
+	my $cycleCheckEnabled = 0;
+	my $expected = "\{ \"bugCar\" => \"(())\", \"fancyCar\" => \"[{}]\", \"normalCar\" => \"[[]]\", \"policeCar\" => \"[8]\", \"policeCarSquad\" => \"[8] [8]\", \"policeChase\" => \"[8] [8] - - - [[]]\", \"traffic\" => \"[[]] - - (()) - - [[]] - - [{}]\" \}";
+	my $actual;
+	eval { $actual = stringifyHash(populateTemplates(\%templates, $dependencyPattern, $cycleCheckEnabled)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "populateTemplates: if provided templates hash with cycle and otherwise valid parameters, throws expected exception";
+	my %templates = ("parentTemplate" => "this guy ->DEPENDENCY(\"selfReferentialTemplate\")<- is SO obsessed with himself",
+					 "selfReferentialTemplate" => "this guy ->DEPENDENCY(\"selfReferentialTemplate\")<- is GREAT");
+	my $cycleCheckEnabled = 1;
+	my $expected = "ERROR: Cyclic dependency found in selfReferentialTemplate -> selfReferentialTemplate\n";
+	my $actual;
+	eval { $actual = stringifyHash(populateTemplates(\%templates, $dependencyPattern, $cycleCheckEnabled)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 
