@@ -11,6 +11,7 @@ my $failures = 0;
 
 # reusable variables
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
+my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # tests equality of two given strings
 # if they are equal, prints SUCCESS with given message and returns true (1)
@@ -36,6 +37,14 @@ sub stringifyHash {
 	my %hash = %{$_[0]};
 
 	return "\{ " . join(", ", map { "\"$ARG\" => \"$hash{$ARG}\"" } sort { $a cmp $b } keys %hash) . " \}";
+}
+
+# maps array to a string representation
+# TODO: ensure array order before printing
+sub stringifyArray {
+	my $array = $_[0];
+
+	return "[ " . join(", ", @$array) . " ]";
 }
 
 
@@ -163,6 +172,7 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
+#TODO: small modifications to this program can cause the $actual string to change, maybe something to do with non-deterministic array order
 {
 	my $message = "populateTemplates: if provided templates hash with cycle and otherwise valid parameters, throws expected exception";
 	my %templates = ("parentTemplate" => "this guy ->DEPENDENCY(\"selfReferentialTemplate\")<- is SO obsessed with himself",
@@ -171,6 +181,20 @@ print("\n");
 	my $expected = "ERROR: Cyclic dependency found in selfReferentialTemplate -> selfReferentialTemplate\n";
 	my $actual;
 	eval { $actual = stringifyHash(populateTemplates(\%templates, $dependencyPattern, $cycleCheckEnabled)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+print("\n");
+
+# identifyTemplate tests
+{
+
+	my $message = "identifyTemplate: if provided template containing one identity declaration that is alone on the first line, returns expected identity and template";
+	my $template = "IDENTITY(\"bazinga\")\nThe whole universe was in a hot dense state...";
+	my $expected = "[ bazinga, \nThe whole universe was in a hot dense state... ]";
+	my $actual;
+	eval { $actual = stringifyArray(identifyTemplate($template, $identityPattern)); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }

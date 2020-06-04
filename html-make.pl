@@ -87,14 +87,21 @@ sub identifyTemplate {
 			die("ERROR: More than one identity declaration found in template first identified as \"" . $identity . "\"\n");
 		}
 
-		# remove the line containing the identity declaration from the template
+		# TODO: figure out how to determine if the identity declaration is alone on the line
+#		if (($start == 0 || substr($template, $start, 1) eq "\n") &&
+#			($end == length($template) - 1 || substr($template, $end, 1) eq "\n")) {
+#			
+#		}
+
+		# removes the identity declaration from the template
+		$template = substr($template, 0, $start) . substr($template, $end);
 	}
 
 	if ($instances < 1) {
 		die("ERROR: No identity declaration found in template.\n");
 	}
 
-	#return identity, template
+	return [$identity, $template];
 }
 
 # invoke populateTemplate() once for each template in the given templates hash
