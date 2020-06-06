@@ -72,9 +72,10 @@ my $locationPattern = "";
 # find an instance of the given identityPattern within the given template, then return the captured
 # identity and the template absent the found instance of identityPattern
 sub identifyTemplate {
-	my $template = $_[0];
-	my $identityPattern = $_[1];
+	my $template = $_[0];		 # contents of a template
+	my $identityPattern = $_[1]; # regex to capture identity declared in the template
 
+	# get the name, start position, and end position of the captured identity declaration
 	my $identity;
 	my $instances = 0;
 	while ($template =~ $identityPattern) {
@@ -82,6 +83,7 @@ sub identifyTemplate {
 		my $end = $+[0];
 		$identity = $1;
 
+		# throw an error if more than one instance of the identityPattern is found
 		$instances++;
 		if ($instances > 1) {
 			die("ERROR: More than one identity declaration found in template first identified as \"" . $identity . "\"\n");
@@ -102,6 +104,7 @@ sub identifyTemplate {
 		$template = substr($template, 0, $start) . substr($template, $end);
 	}
 
+	# throw an error if no instances of the identityPattern is found
 	if ($instances < 1) {
 		die("ERROR: No identity declaration found in template.\n");
 	}
@@ -109,7 +112,8 @@ sub identifyTemplate {
 	return ($identity, $template);
 }
 
-# invoke populateTemplate() once for each template in the given templates hash
+# invoke populateTemplate() once for each template in the given templates hash, then return the
+# populated templates hash
 sub populateTemplates {
 	my %templates = %{$_[0]};		# hash corresponding template names to template contents
 	my $dependencyPattern = $_[1];	# regex to capture dependencies declared in the templates
@@ -125,7 +129,7 @@ sub populateTemplates {
 
 # find instances of the given dependencyPattern within the given template and replace each of the
 # found instances with the contents corresponding to the instance's dependencyName in the given
-# templates hash
+# templates hash, then return the populated template
 sub populateTemplate {
 	my $template = $_[0];			# contents of a template
 	my $templates = $_[1];			# REFERENCE to a hash corresponding template names to template contents
