@@ -70,7 +70,7 @@ my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 my $locationPattern = "";
 
 # find an instance of the given identityPattern within the given template, then return the captured
-# name/identity and the template absent the line containing the found instance
+# identity and the template absent the found instance of identityPattern
 sub identifyTemplate {
 	my $template = $_[0];
 	my $identityPattern = $_[1];

@@ -219,7 +219,55 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
-#TODO: more unit tests for identifyTemplate (<1 declaration, >1 declaration, empty template)
+{
+	my $message = "identifyTemplate: if provided template containing one identity declaration alone on the middle line, returns expected identity and template";
+	my $template = "this is the first line\nthis is the IDENTITY(\"zoidberg\") line\nthis is the last line";
+	my $expected = "[ \"this is the first line\nthis is the  line\nthis is the last line\", \"zoidberg\" ]";
+	my $actual;
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "identifyTemplate: if provided template containing one identity declaration alone on the last line, returns expected identity and template";
+	my $template = "this is the first line\nthis is the middle line\nthis is the IDENTITY(\"zoidberg\") line";
+	my $expected = "[ \"this is the first line\nthis is the middle line\nthis is the  line\", \"zoidberg\" ]";
+	my $actual;
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "identifyTemplate: if provided template with no identity declaration, throws expected exception";
+	my $template = "What a fine court, too, that requires such an explanation!";
+	my $expected = "ERROR: No identity declaration found in template.\n";
+	my $actual;
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "identifyTemplate: if provided template with two identity declarations, throws expected exception";
+	my $template = "Who else, but IDENTITY(\"zoidberg\"), and his sidekick IDENTITY(\"boy-dberg\")";
+	my $expected = "ERROR: More than one identity declaration found in template first identified as \"boy-dberg\"\n";
+	my $actual;
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "identifyTemplate: if provided an empty template, throws expected exception";
+	my $template = "";
+	my $expected = "ERROR: No identity declaration found in template.\n";
+	my $actual;
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
 
 
 # final results printout
