@@ -59,6 +59,17 @@ use warnings;
 # syntax consideration:
 # 	Should be easy to understand and write. Should intersect with the syntax of other languages
 #	(especially HTML and CSS)
+#
+# internet aspect:
+# option to cache external/web references in the project structure, store cached content in
+# plaintext files, maybe something like (URL IDENTITY CACHE_TIME CONTENT), might be performant and
+# definitely makes the development cycle shorting and simpler with no external dependencies, option
+# to adjust cache expiration time, option to cache external links (regex may be a challenge there),
+# option to silent/warn/error on dead links and/or cache misses. also does a lot to harden a
+# website (and the internet) against link rot (also less maintenance).
+#
+# something like NET_LINK("INTERNET_URL") for caching pure links and NET_DEPENDENCY("INTERNET_URL")
+# for external links as dependencies
 
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
@@ -68,6 +79,27 @@ my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # TODO
 my $locationPattern = "";
+
+# invoke identifyTemplate() once for each template in the given templates array, then return the
+# templates hash associating identities to template contents
+sub identifyTemplates {
+	my @templates = @{$_[0]};	 # array containing template contents
+	my $identityPattern = $_[1]; # regex to capture identities declared in templates
+
+	my %templates;
+	foreach my $template (@templates) {
+		($template, $identity) = identifyTemplate($template, $identityPattern);
+
+		# throw an error if more than one template have the same identity
+		if (defined($templates{$identity})) {
+			die("ERROR: More than one template identified as \"" . $identity . "\"\n");
+		}
+
+		$templates{$identity} = $template;
+	}
+
+	return \%templates;
+}
 
 # find an instance of the given identityPattern within the given template, then return the captured
 # identity and the template absent the found instance of identityPattern

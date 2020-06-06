@@ -269,6 +269,16 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
+print("\n");
+
+#identifyTemplates tests
+
+{
+
+}
+
+# TODO: check for repeat identities, make sure $template declared in foreach isn't modified, reconsider having a %templates hash AND a @templates array
+
 
 # final results printout
 print("\nFINISHED\n");
