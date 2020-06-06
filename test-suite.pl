@@ -14,8 +14,8 @@ my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # tests equality of two given strings
-# if they are equal, prints SUCCESS with given message and returns true (1)
-# if they aren't equal, prints FAILURE with given message and returns false (0)
+# if they are equal, prints SUCCESS with given message, then returns true (1)
+# if they aren't equal, prints FAILURE with given message and newline-escaped comparison, then returns false (0)
 sub assertStringEquality {
 	my $expected = $_[0];
 	my $actual = $_[1];
@@ -26,8 +26,8 @@ sub assertStringEquality {
 		return 1;
 	} else {
 		print("FAILURE - " . $message . "\n");
-		print("    EXPECTED - " . $expected . "\n");
-		print("    ACTUAL   - " . $actual . "\n");
+		print("    EXPECTED - " . $expected =~ s/\n/\\n/rg . "\n");
+		print("    ACTUAL   - " . $actual =~ s/\n/\\n/rg . "\n");
 		return 0;
 	}
 }
@@ -169,13 +169,13 @@ print("\n");
 
 {
 	my $message = "populateTemplates: if provided templates hash with present nested dependencies and otherwise valid parameters, returns expected templates hash";
-	my %templates = ("traffic" => "DEPENDENCY(\"normalCar\") - - DEPENDENCY(\"bugCar\") - - DEPENDENCY(\"normalCar\") - - DEPENDENCY(\"fancyCar\")",
-					 "policeChase" => "DEPENDENCY(\"policeCarSquad\") - - - DEPENDENCY(\"normalCar\")",
-					 "policeCarSquad" => "DEPENDENCY(\"policeCar\") DEPENDENCY(\"policeCar\")",
-					 "policeCar" => "[8]",
-					 "normalCar" => "[[]]",
-					 "bugCar" => "(())",
-					 "fancyCar" => "[{}]");
+	my %templates = ( "traffic" => "DEPENDENCY(\"normalCar\") - - DEPENDENCY(\"bugCar\") - - DEPENDENCY(\"normalCar\") - - DEPENDENCY(\"fancyCar\")",
+					  "policeChase" => "DEPENDENCY(\"policeCarSquad\") - - - DEPENDENCY(\"normalCar\")",
+					  "policeCarSquad" => "DEPENDENCY(\"policeCar\") DEPENDENCY(\"policeCar\")",
+					  "policeCar" => "[8]",
+					  "normalCar" => "[[]]",
+					  "bugCar" => "(())",
+					  "fancyCar" => "[{}]");
 	my $cycleCheckEnabled = 0;
 	my $expected = "\{ \"bugCar\" => \"(())\", \"fancyCar\" => \"[{}]\", \"normalCar\" => \"[[]]\", \"policeCar\" => \"[8]\", \"policeCarSquad\" => \"[8] [8]\", \"policeChase\" => \"[8] [8] - - - [[]]\", \"traffic\" => \"[[]] - - (()) - - [[]] - - [{}]\" \}";
 	my $actual;
@@ -210,19 +210,9 @@ print("\n");
 }
 
 {
-	my $message = "identifyTemplate: if provided template containing one identity declaration with company on the first line, returns expected identity and template";
-	my $template = "today is a IDENTITY(\"zoidberg\") reference kind of day";
-	my $expected = "[ \"today is a  reference kind of day\", \"zoidberg\" ]";
-	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
-	$actual = $EVAL_ERROR if $EVAL_ERROR;
-	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
-}
-
-{
 	my $message = "identifyTemplate: if provided template containing one identity declaration alone on the middle line, returns expected identity and template";
-	my $template = "this is the first line\nthis is the IDENTITY(\"zoidberg\") line\nthis is the last line";
-	my $expected = "[ \"this is the first line\nthis is the  line\nthis is the last line\", \"zoidberg\" ]";
+	my $template = "this is the first line\nIDENTITY(\"middle\")\nthis is the last line";
+	my $expected = "[ \"middle\", \"this is the first line\nthis is the last line\" ]";
 	my $actual;
 	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
@@ -233,6 +223,26 @@ print("\n");
 	my $message = "identifyTemplate: if provided template containing one identity declaration alone on the last line, returns expected identity and template";
 	my $template = "this is the first line\nthis is the middle line\nthis is the IDENTITY(\"zoidberg\") line";
 	my $expected = "[ \"this is the first line\nthis is the middle line\nthis is the  line\", \"zoidberg\" ]";
+	my $actual;
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "identifyTemplate: if provided template containing one identity declaration with company on the first line, returns expected identity and template";
+	my $template = "today is a IDENTITY(\"zoidberg\") reference kind of day";
+	my $expected = "[ \"today is a  reference kind of day\", \"zoidberg\" ]";
+	my $actual;
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "identifyTemplate: if provided template containing one identity declaration with company on the middle line, returns expected identity and template";
+	my $template = "this is the first line\nthis is the IDENTITY(\"zoidberg\") line\nthis is the last line";
+	my $expected = "[ \"this is the first line\nthis is the  line\nthis is the last line\", \"zoidberg\" ]";
 	my $actual;
 	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
@@ -272,15 +282,41 @@ print("\n");
 print("\n");
 
 #identifyTemplates tests
+{
+	my $message = "identifyTemplates: if provided a list of templates each with an identity declaration, returns expected templates hash";
+	my @templates = ( "IDENTITY(\"zoidberg\")",
+					  "I am IDENTITY(\"red_crab_man\")",
+					  "I\nenjoy\nIDENTITY(\"crab\")\nmeat",
+					  "Mr.\nIDENTITY(\"Krabs\")\nloves\nmoney");
+	my $expected = "{ \"\" => \"zoidberg\", \"I\nenjoy\nmeat\" => \"crab\", \"I am \" => \"red_crab_man\", \"Mr.\nloves\nmoney\" => \"Krabs\" }";
+	my $actual;
+	eval { $actual = stringifyHash(identifyTemplates(\@templates, $identityPattern)) };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
 
 {
-
+	my $message = "identifyTemplates: TODO";
+	my @templates = ();
+	my $expected = "";
+	my $actual;
+	eval { $actual = stringifyHash(identifyTemplates(\@templates, $identityPattern)) };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 # TODO: check for repeat identities, make sure $template declared in foreach isn't modified, reconsider having a %templates hash AND a @templates array
+
+# TODO: how the FUCK do I abstract the three common $actual lines?
 
 
 # final results printout
 print("\nFINISHED\n");
 print("    SUCCESSES - " . $successes . "\n");
 print("    FAILURES - " . $failures . "\n");
+
+my $string = "test\ntest";
+my $newline = substr($string, 4, 1);
+if (substr($string, 4, 1) eq "\n") {
+	print "\nNEWLINE DETECTED\n";
+}

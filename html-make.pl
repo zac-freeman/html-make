@@ -70,6 +70,9 @@ use warnings;
 #
 # something like NET_LINK("INTERNET_URL") for caching pure links and NET_DEPENDENCY("INTERNET_URL")
 # for external links as dependencies
+#
+# A far future consideration is supporting inferior systems by abstracting the newline related logic
+# to consider characters other than "\n"
 
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
@@ -88,7 +91,7 @@ sub identifyTemplates {
 
 	my %templates;
 	foreach my $template (@templates) {
-		($template, $identity) = identifyTemplate($template, $identityPattern);
+		($template, my $identity) = identifyTemplate($template, $identityPattern);
 
 		# throw an error if more than one template have the same identity
 		if (defined($templates{$identity})) {
@@ -123,7 +126,7 @@ sub identifyTemplate {
 
 		# if the identity declaration is alone on the line, remove at most one of the surrounding
 		# newlines
-		if (($start == 0 || substr($template, $start, 1) eq "\n") &&
+		if (($start == 0 || substr($template, $start - 1, 1) eq "\n") &&
 			($end == length($template) - 1 || substr($template, $end, 1) eq "\n")) {
 			if ($start > 0) {
 				$start--;
