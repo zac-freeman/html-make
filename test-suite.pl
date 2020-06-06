@@ -5,6 +5,8 @@ use English;
 
 require "./html-make.pl";
 
+# TODO: evaluate case where provided template value is empty
+
 # test metrics
 my $successes = 0;
 my $failures = 0;
@@ -42,9 +44,9 @@ sub stringifyHash {
 # maps array to a string representation
 # TODO: ensure array order before printing
 sub stringifyArray {
-	my $array = $_[0];
+	my @array = @{$_[0]};
 
-	return "[ " . join(", ", @$array) . " ]";
+	return "[ " . join(", ", sort {$a cmp $b} @array) . " ]";
 }
 
 
@@ -172,11 +174,9 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
-#TODO: small modifications to this program can cause the $actual string to change, maybe something to do with non-deterministic array order
 {
 	my $message = "populateTemplates: if provided templates hash with cycle and otherwise valid parameters, throws expected exception";
-	my %templates = ("parentTemplate" => "this guy ->DEPENDENCY(\"selfReferentialTemplate\")<- is SO obsessed with himself",
-					 "selfReferentialTemplate" => "this guy ->DEPENDENCY(\"selfReferentialTemplate\")<- is GREAT");
+	my %templates = ("selfReferentialTemplate" => "this guy ->DEPENDENCY(\"selfReferentialTemplate\")<- is GREAT");
 	my $cycleCheckEnabled = 1;
 	my $expected = "ERROR: Cyclic dependency found in selfReferentialTemplate -> selfReferentialTemplate\n";
 	my $actual;
@@ -192,9 +192,9 @@ print("\n");
 
 	my $message = "identifyTemplate: if provided template containing one identity declaration that is alone on the first line, returns expected identity and template";
 	my $template = "IDENTITY(\"bazinga\")\nThe whole universe was in a hot dense state...";
-	my $expected = "[ bazinga, \nThe whole universe was in a hot dense state... ]";
+	my $expected = "[ The whole universe was in a hot dense state..., bazinga ]";
 	my $actual;
-	eval { $actual = stringifyArray(identifyTemplate($template, $identityPattern)); };
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }

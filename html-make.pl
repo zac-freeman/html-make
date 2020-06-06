@@ -60,10 +60,10 @@ use warnings;
 # 	Should be easy to understand and write. Should intersect with the syntax of other languages
 #	(especially HTML and CSS)
 
-# matches DEPENDENCY(DEPENDENCY_NAME) and captures DEPENDENCY_NAME into $1
+# matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
-# TODO
+# matches IDENTITY("IDENTITY_NAME") and captures IDENTITY_NAME into $1
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # TODO
@@ -87,11 +87,16 @@ sub identifyTemplate {
 			die("ERROR: More than one identity declaration found in template first identified as \"" . $identity . "\"\n");
 		}
 
-		# TODO: figure out how to determine if the identity declaration is alone on the line
-#		if (($start == 0 || substr($template, $start, 1) eq "\n") &&
-#			($end == length($template) - 1 || substr($template, $end, 1) eq "\n")) {
-#			
-#		}
+		# if the identity declaration is alone on the line, remove at most one of the surrounding
+		# newlines
+		if (($start == 0 || substr($template, $start, 1) eq "\n") &&
+			($end == length($template) - 1 || substr($template, $end, 1) eq "\n")) {
+			if ($start > 0) {
+				$start--;
+			} elsif ($end < length($template) - 1) {
+				$end++;
+			}
+		}
 
 		# removes the identity declaration from the template
 		$template = substr($template, 0, $start) . substr($template, $end);
@@ -101,7 +106,7 @@ sub identifyTemplate {
 		die("ERROR: No identity declaration found in template.\n");
 	}
 
-	return [$identity, $template];
+	return ($identity, $template);
 }
 
 # invoke populateTemplate() once for each template in the given templates hash
