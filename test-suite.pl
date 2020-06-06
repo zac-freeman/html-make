@@ -5,8 +5,6 @@ use English;
 
 require "./html-make.pl";
 
-# TODO: evaluate case where provided template value is empty
-
 # test metrics
 my $successes = 0;
 my $failures = 0;
@@ -42,11 +40,10 @@ sub stringifyHash {
 }
 
 # maps array to a string representation
-# TODO: ensure array order before printing
 sub stringifyArray {
 	my @array = @{$_[0]};
 
-	return "[ " . join(", ", sort {$a cmp $b} @array) . " ]";
+	return "[ " . join(", ", map { "\"$ARG\"" } sort {$a cmp $b} @array) . " ]";
 }
 
 
@@ -98,7 +95,7 @@ sub stringifyArray {
 					  "childTemplate" => "bazinga");
 	my $template = $templates{"rootTemplate"};
 	my @parents = ("rootTemplate");
-	my $expected = $templates{"rootTemplate"};
+	my $expected = "sheldon says DEPENDENCY(\"childTemplate\")";
 	eval { populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
 	my $actual = $templates{"rootTemplate"};
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
@@ -138,6 +135,19 @@ sub stringifyArray {
 	my $expected = "ERROR: No template found in templates hash with name \"where\"\n";
 	my $actual;
 	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "populateTemplate: if provided templates hash containing an empty dependency and otherwise valid parameters, returns expected template content";
+	my %templates = ( "dependentTemplate" => "DEPENDENCY(\"emptyTemplate\")you saw nothing",
+					  "emptyTemplate" => "" );
+	my $template = $templates{"dependentTemplate"};
+	my @parents = ();
+	my $expected = "you saw nothing";
+	my $actual;
+	eval { $actual = populateTemplate($template, \%templates, $dependencyPattern, \@parents) };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -192,12 +202,24 @@ print("\n");
 
 	my $message = "identifyTemplate: if provided template containing one identity declaration that is alone on the first line, returns expected identity and template";
 	my $template = "IDENTITY(\"bazinga\")\nThe whole universe was in a hot dense state...";
-	my $expected = "[ The whole universe was in a hot dense state..., bazinga ]";
+	my $expected = "[ \"The whole universe was in a hot dense state...\", \"bazinga\" ]";
 	my $actual;
 	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
+
+{
+	my $message = "identifyTemplate: if provided template containing one identity declaration with company on the first line, returns expected identity and template";
+	my $template = "today is a IDENTITY(\"zoidberg\") reference kind of day";
+	my $expected = "[ \"today is a  reference kind of day\", \"zoidberg\" ]";
+	my $actual;
+	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+#TODO: more unit tests for identifyTemplate (<1 declaration, >1 declaration, empty template)
 
 
 # final results printout
