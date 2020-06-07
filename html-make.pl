@@ -73,6 +73,8 @@ use warnings;
 #
 # A far future consideration is supporting inferior systems by abstracting the newline related logic
 # to consider characters other than "\n"
+#
+# Should there be an empty check for the arrays and hashes being passed in?
 
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
@@ -91,7 +93,7 @@ sub identifyTemplates {
 
 	my %templates;
 	foreach my $template (@templates) {
-		($template, my $identity) = identifyTemplate($template, $identityPattern);
+		(my $identity, $template) = identifyTemplate($template, $identityPattern);
 
 		# throw an error if more than one template have the same identity
 		if (defined($templates{$identity})) {
