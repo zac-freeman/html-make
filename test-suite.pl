@@ -288,19 +288,45 @@ print("\n");
 					  "I am IDENTITY(\"red_crab_man\")",
 					  "I\nenjoy\nIDENTITY(\"crab\")\nmeat",
 					  "Mr.\nIDENTITY(\"Krabs\")\nloves\nmoney");
-	my $expected = "{ \"\" => \"zoidberg\", \"I\nenjoy\nmeat\" => \"crab\", \"I am \" => \"red_crab_man\", \"Mr.\nloves\nmoney\" => \"Krabs\" }";
+	my $expected = "{ \"Krabs\" => \"Mr.\nloves\nmoney\", \"crab\" => \"I\nenjoy\nmeat\", \"red_crab_man\" => \"I am \", \"zoidberg\" => \"\" }";
 	my $actual;
-	eval { $actual = stringifyHash(identifyTemplates(\@templates, $identityPattern)) };
+	eval { $actual = stringifyHash(identifyTemplates(\@templates, $identityPattern)); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 {
-	my $message = "identifyTemplates: TODO";
-	my @templates = ();
-	my $expected = "";
+	my $message = "identifyTemplates: if provided a list of templates in which one is missing an identity declaration, throws expected exception";
+	my @templates = ( "IDENTITY(\"iceberg\")",
+					  "I think I should go back to grad school soon.\nI would have to start studying for the GRE pretty soon too...",
+					  "Why can't someone just pay me to do what I want? IDENTITY(\"identity\")");
+	my $expected = "ERROR: No identity declaration found in template.\n";
 	my $actual;
-	eval { $actual = stringifyHash(identifyTemplates(\@templates, $identityPattern)) };
+	eval { $actual = stringifyHash(identifyTemplates(\@templates, $identityPattern)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "identifyTemplates: if provided a valid list of templates, the original list is not modified";
+	my @templates = ( "test1 IDENTITY(\"test1\")",
+					  "test2 IDENTITY(\"test2\")",
+					  "testE IDENTITY(\"teste\")");
+	my $expected = "[ \"test1 IDENTITY(\"test1\")\", \"test2 IDENTITY(\"test2\")\", \"testE IDENTITY(\"teste\")\" ]";
+	my $actual;
+	eval { identifyTemplates(\@templates, $identityPattern); $actual = stringifyArray(\@templates); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "identifyTemplates: if provided a list of templates with repeated identities, throws the expected exception";
+	my @templates = ( "\n\n\n\n\n\nIDENTITY(\"zoidberg\")\n\n\n",
+					  "zoidberg\nIDENTITY(\"sheldon\")\niceberg\n",
+					  "IDENTITY(\"zoidberg\")");
+	my $expected = "ERROR: More than one template identified as \"zoidberg\"\n";
+	my $actual;
+	eval { $actual = stringifyHash(identifyTemplates(\@templates, $identityPattern)); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -314,9 +340,3 @@ print("\n");
 print("\nFINISHED\n");
 print("    SUCCESSES - " . $successes . "\n");
 print("    FAILURES - " . $failures . "\n");
-
-my $string = "test\ntest";
-my $newline = substr($string, 4, 1);
-if (substr($string, 4, 1) eq "\n") {
-	print "\nNEWLINE DETECTED\n";
-}
