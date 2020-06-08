@@ -113,6 +113,7 @@ sub identifyTemplates {
 # invoke extractPattern(), with locationPattern, once for each template in the given templates hash,
 # correspond each template identity to a location, then return the hash corresponding identities to
 # locations and the hash corresponding identities to templates
+# TODO: a location is not required, need to add boolean to disable less-than-one check in extractPattern()
 sub locateTemplates {
 	my %templates = %{$_[0]};	 # hash corresponding identities to templates
 	my $locationPattern = $_[1]; # regex to capture locations declared in templates
