@@ -197,84 +197,84 @@ print("\n");
 
 print("\n");
 
-# identifyTemplate tests
+# extractPattern tests
 {
 
-	my $message = "identifyTemplate: if provided template containing one identity declaration that is alone on the first line, returns expected identity and template";
+	my $message = "extractPattern: if provided template containing one identity declaration that is alone on the first line, returns expected identity and template";
 	my $template = "IDENTITY(\"bazinga\")\nThe whole universe was in a hot dense state...";
 	my $expected = "[ \"The whole universe was in a hot dense state...\", \"bazinga\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 {
-	my $message = "identifyTemplate: if provided template containing one identity declaration alone on the middle line, returns expected identity and template";
+	my $message = "extractPattern: if provided template containing one identity declaration alone on the middle line, returns expected identity and template";
 	my $template = "this is the first line\nIDENTITY(\"middle\")\nthis is the last line";
 	my $expected = "[ \"middle\", \"this is the first line\nthis is the last line\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 {
-	my $message = "identifyTemplate: if provided template containing one identity declaration alone on the last line, returns expected identity and template";
+	my $message = "extractPattern: if provided template containing one identity declaration alone on the last line, returns expected identity and template";
 	my $template = "this is the first line\nthis is the middle line\nthis is the IDENTITY(\"zoidberg\") line";
 	my $expected = "[ \"this is the first line\nthis is the middle line\nthis is the  line\", \"zoidberg\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 {
-	my $message = "identifyTemplate: if provided template containing one identity declaration with company on the first line, returns expected identity and template";
+	my $message = "extractPattern: if provided template containing one identity declaration with company on the first line, returns expected identity and template";
 	my $template = "today is a IDENTITY(\"zoidberg\") reference kind of day";
 	my $expected = "[ \"today is a  reference kind of day\", \"zoidberg\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 {
-	my $message = "identifyTemplate: if provided template containing one identity declaration with company on the middle line, returns expected identity and template";
+	my $message = "extractPattern: if provided template containing one identity declaration with company on the middle line, returns expected identity and template";
 	my $template = "this is the first line\nthis is the IDENTITY(\"zoidberg\") line\nthis is the last line";
 	my $expected = "[ \"this is the first line\nthis is the  line\nthis is the last line\", \"zoidberg\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 {
-	my $message = "identifyTemplate: if provided template with no identity declaration, throws expected exception";
+	my $message = "extractPattern: if provided template with no identity declaration, throws expected exception";
 	my $template = "What a fine court, too, that requires such an explanation!";
-	my $expected = "ERROR: No identity declaration found in template.\n";
+	my $expected = "ERROR: No instance of pattern \"(?^:IDENTITY\\(\\\"([0-9a-zA-Z._\\-]+)\\\"\\))\" found in template.\n";
 	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 {
-	my $message = "identifyTemplate: if provided template with two identity declarations, throws expected exception";
+	my $message = "extractPattern: if provided template with two identity declarations, throws expected exception";
 	my $template = "Who else, but IDENTITY(\"zoidberg\"), and his sidekick IDENTITY(\"boy-dberg\")";
-	my $expected = "ERROR: More than one identity declaration found in template first identified as \"boy-dberg\"\n";
+	my $expected = "ERROR: More than one instance of pattern \"(?^:IDENTITY\\(\\\"([0-9a-zA-Z._\\-]+)\\\"\\))\" found in template with first catch \"zoidberg\"\n";
 	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
 {
-	my $message = "identifyTemplate: if provided an empty template, throws expected exception";
+	my $message = "extractPattern: if provided an empty template, throws expected exception";
 	my $template = "";
-	my $expected = "ERROR: No identity declaration found in template.\n";
+	my $expected = "ERROR: No instance of pattern \"(?^:IDENTITY\\(\\\"([0-9a-zA-Z._\\-]+)\\\"\\))\" found in template.\n";
 	my $actual;
-	eval { $actual = stringifyArray([identifyTemplate($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -300,7 +300,7 @@ print("\n");
 	my @templates = ( "IDENTITY(\"iceberg\")",
 					  "I think I should go back to grad school soon.\nI would have to start studying for the GRE pretty soon too...",
 					  "Why can't someone just pay me to do what I want? IDENTITY(\"identity\")");
-	my $expected = "ERROR: No identity declaration found in template.\n";
+	my $expected = "ERROR: No instance of pattern \"(?^:IDENTITY\\(\\\"([0-9a-zA-Z._\\-]+)\\\"\\))\" found in template.\n";
 	my $actual;
 	eval { $actual = stringifyHash(identifyTemplates(\@templates, $identityPattern)); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
@@ -331,8 +331,7 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
-# TODO: check for repeat identities, make sure $template declared in foreach isn't modified, reconsider having a %templates hash AND a @templates array
-
+# TODO: make tests for extractPattern using other patterns
 # TODO: how the FUCK do I abstract the three common $actual lines?
 
 

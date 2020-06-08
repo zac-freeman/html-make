@@ -75,9 +75,10 @@ use warnings;
 # to consider characters other than "\n"
 #
 # Should there be an empty check for the arrays and hashes being passed in?
-
-# matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
-my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
+#
+# I think it makes sense to have locateTemplates() operate on a hash of identified templates, their
+# identities are essentially the unique key to each template, and I can reasonably expect any future
+# attribute to operate on the hash of identified templates.
 
 # matches IDENTITY("IDENTITY_NAME") and captures IDENTITY_NAME into $1
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
@@ -85,15 +86,18 @@ my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 # TODO
 my $locationPattern = "";
 
-# invoke identifyTemplate() once for each template in the given templates array, then return the
-# templates hash associating identities to template contents
+# matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
+my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
+
+# invoke extractPattern(), with identityPattern, once for each template in the given templates
+# array, then return the templates hash associating identities to template contents
 sub identifyTemplates {
 	my @templates = @{$_[0]};	 # array containing template contents
 	my $identityPattern = $_[1]; # regex to capture identities declared in templates
 
 	my %templates;
 	foreach my $template (@templates) {
-		(my $identity, $template) = identifyTemplate($template, $identityPattern);
+		(my $identity, $template) = extractPattern($template, $identityPattern);
 
 		# throw an error if more than one template have the same identity
 		if (defined($templates{$identity})) {
@@ -106,27 +110,32 @@ sub identifyTemplates {
 	return \%templates;
 }
 
-# find an instance of the given identityPattern within the given template, then return the captured
-# identity and the template absent the found instance of identityPattern
-sub identifyTemplate {
-	my $template = $_[0];		 # contents of a template
-	my $identityPattern = $_[1]; # regex to capture identity declared in the template
+# TODO: take in templates hash, return identity to location hash and modified templates hash
+sub locateTemplates {}
 
-	# get the name, start position, and end position of the captured identity declaration
-	my $identity;
+
+# find an instance of the given pattern within the given template, then return the captured
+# value and the template absent the found instance of the pattern
+sub extractPattern {
+	my $template = $_[0];
+	my $pattern = $_[1];
+
+	my $catch;
 	my $instances = 0;
-	while ($template =~ $identityPattern) {
-		my $start = $-[0];
-		my $end = $+[0];
-		$identity = $1;
-
-		# throw an error if more than one instance of the identityPattern is found
+	while ($template =~ $pattern) {
+		# throw error if more than one instances of the pattern is found
 		$instances++;
 		if ($instances > 1) {
-			die("ERROR: More than one identity declaration found in template first identified as \"" . $identity . "\"\n");
+			die ("ERROR: More than one instance of pattern \"". $pattern .
+				 "\" found in template with first catch \"". $catch ."\"\n");
 		}
 
-		# if the identity declaration is alone on the line, remove at most one of the surrounding
+		# capture start, end, and captured value of pattern match
+		my $start = $-[0];
+		my $end = $+[0];
+		$catch = $1;
+
+		# if the pattern match is alone on the line, remove at most one of the surrounding
 		# newlines
 		if (($start == 0 || substr($template, $start - 1, 1) eq "\n") &&
 			($end == length($template) - 1 || substr($template, $end, 1) eq "\n")) {
@@ -137,16 +146,16 @@ sub identifyTemplate {
 			}
 		}
 
-		# removes the identity declaration from the template
+		# remove the pattern match from the template
 		$template = substr($template, 0, $start) . substr($template, $end);
 	}
 
-	# throw an error if no instances of the identityPattern is found
+	# throw an error if less than one instance the pattern is found
 	if ($instances < 1) {
-		die("ERROR: No identity declaration found in template.\n");
+		die("ERROR: No instance of pattern \"" . $pattern . "\" found in template.\n");
 	}
 
-	return ($identity, $template);
+	return ($catch, $template)
 }
 
 # invoke populateTemplate() once for each template in the given templates hash, then return the
@@ -154,7 +163,7 @@ sub identifyTemplate {
 sub populateTemplates {
 	my %templates = %{$_[0]};		# hash corresponding template names to template contents
 	my $dependencyPattern = $_[1];	# regex to capture dependencies declared in the templates
-	my $cycleCheckEnabled = $_[2];	# boolean to enable checking for cyclic dependencies in templates hash
+	my $cycleCheckEnabled = $_[2];	# boolean to enable cyclic dependency checking
 
 	foreach my $name (keys %templates) {
 		my @parents = $cycleCheckEnabled ? ($name) : ();
@@ -169,9 +178,9 @@ sub populateTemplates {
 # templates hash, then return the populated template
 sub populateTemplate {
 	my $template = $_[0];			# contents of a template
-	my $templates = $_[1];			# REFERENCE to a hash corresponding template names to template contents
+	my $templates = $_[1];			# REFERENCE to a hash of template names to template contents
 	my $dependencyPattern = $_[2];	# regex to capture dependencies declared in the template
-	my @parents = @{$_[3]}; 		# chronological array of names of templates being populated, ignored if empty
+	my @parents = @{$_[3]}; 		# ordered list of dependent templates, ignored if empty
 
 	while ($template =~ $dependencyPattern) {
 		# get the start position, end position, and captured name of the regex match
@@ -181,7 +190,8 @@ sub populateTemplate {
 
 		# throw an error if dependencyName is already present in parents array
 		if (grep(/^$dependencyName$/, @parents)) {
-			die("ERROR: Cyclic dependency found in " . join(" -> ", @parents) . " -> " . $dependencyName . "\n");
+			die("ERROR: Cyclic dependency found in " . join(" -> ", @parents) . " -> " .
+				$dependencyName . "\n");
 		}
 
 		# if the parents array isn't empty, add dependencyName to the end of it
@@ -193,10 +203,11 @@ sub populateTemplate {
 		# throw an error if the contents aren't present in the templates hash
 		my $dependency = \$templates->{$dependencyName};
 		if (!defined($$dependency)) {
-			die("ERROR: No template found in templates hash with name \"" . $dependencyName . "\"\n");
+			die("ERROR: No template found in templates hash with name \"" .
+				$dependencyName . "\"\n");
 		}
 
-		# populate the dependency contents, then insert it in the place of the dependency declaration
+		# populate the dependency contents, then insert it in place of the dependency declaration
 		$$dependency = populateTemplate($$dependency, $templates, $dependencyPattern, \@parents);
 		$template = substr($template, 0, $start) . $$dependency . substr($template, $end);
 	}
