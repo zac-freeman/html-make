@@ -110,15 +110,37 @@ sub identifyTemplates {
 	return \%templates;
 }
 
-# TODO: take in templates hash, return identity to location hash and modified templates hash
-sub locateTemplates {}
+# invoke extractPattern(), with locationPattern, once for each template in the given templates hash,
+# correspond each template identity to a location, then return the hash corresponding identities to
+# locations and the hash corresponding identities to templates
+sub locateTemplates {
+	my %templates = %{$_[0]};	 # hash corresponding identities to templates
+	my $locationPattern = $_[1]; # regex to capture locations declared in templates
+
+	my %locationToIdentity;
+	foreach my $identity (keys %templates) {
+		(my $location, my $template) = extractPattern($templates{$identity}, $locationPattern);
+
+		# throw an error if more than one template have the same location
+		if (defined($locationToIdentity($location))) {
+			die("ERROR: More than one template located at \"" . $location . "\":" .
+				$identity . " and " . $locationToIdentity($location) . "\n");
+		}
+
+		$locationToIdentity{$location} = $identity;
+		$templates{$identity} = $template;
+	}
+
+	my %identityToLocation = reverse %locationToIdentity;
+	return (\%identityToLocation, \%templates);
+}
 
 
 # find an instance of the given pattern within the given template, then return the captured
 # value and the template absent the found instance of the pattern
 sub extractPattern {
-	my $template = $_[0];
-	my $pattern = $_[1];
+	my $template = $_[0];	# contents of a template
+	my $pattern = $_[1];	# regex to find a pattern and capture a value
 
 	my $catch;
 	my $instances = 0;
