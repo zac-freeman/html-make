@@ -465,6 +465,20 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
+{
+	my $message = "processTemplates: if provided a list of identified, located templates with dependencies, returns expected locationToTemplate hash";
+	my @templates = ( "MY CHILD:\nDEPENDENCY(\"child\")\nIDENTITY(\"parent\")\nLOCATION(\"parent\")",
+					  "MY CHILD:\nDEPENDENCY(\"grandchild\")\nIDENTITY(\"child\")\nLOCATION(\"child\")",
+					  "IDENTITY(\"grandchild\")\nI AM THE GRANDCHILD");
+	my $cycleCheckEnabled = 1;
+	my $expected = "{ \"child\" => \"MY CHILD:\nI AM THE GRANDCHILD\", \"parent\" => \"MY CHILD:\nMY CHILD:\nI AM THE GRANDCHILD\" }";
+	my $actual;
+	eval { $actual = stringifyHash(processTemplates(\@templates, $identityPattern, $locationPattern, $dependencyPattern, $cycleCheckEnabled)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+
 # final results printout
 print("\nFINISHED\n");
 print("    SUCCESSES - " . $successes . "\n");
