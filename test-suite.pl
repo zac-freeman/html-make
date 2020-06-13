@@ -11,7 +11,7 @@ my $failures = 0;
 
 # reusable variables
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
-my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-]+)\"\)/;
+my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-\/]+)\"\)/;
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # tests equality of two given strings
@@ -40,11 +40,18 @@ sub stringifyHash {
 	return "\{ " . join(", ", map { "\"$ARG\" => \"$hash{$ARG}\"" } sort { $a cmp $b } keys %hash) . " \}";
 }
 
-# maps array to a string representation
+# sorts array then maps array to a string representation
 sub stringifyArray {
 	my @array = @{$_[0]};
 
 	return "[ " . join(", ", map { "\"$ARG\"" } sort {$a cmp $b} @array) . " ]";
+}
+
+# stringifies each hash in the array, then stringifies the array
+sub stringifyArrayOfHashes {
+	my @array = @{$_[0]};
+
+	return stringifyArray([map { stringifyHash($ARG) } @array]);
 }
 
 
@@ -352,8 +359,33 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
+print("\n");
+
 # locateTemplates tests
-# TODO
+{
+	my $message = "locateTemplates: if provided a valid templates hash, returns the expected identityToLocation hash and templates hash";
+	my %templates = ( "zoID" => "now back to our regularly scheduled programming LOCATION(\"zoidberg\")",
+					  "lipID" => "the location of this one is \"lip\"LOCATION(\"lip\")");
+	my $expected = "[ \"{ \"lipID\" => \"lip\", \"zoID\" => \"zoidberg\" }\", \"{ \"lipID\" => \"the location of this one is \"lip\"\", \"zoID\" => \"now back to our regularly scheduled programming \" }\" ]";
+	my $actual;
+	eval { $actual = stringifyArrayOfHashes([locateTemplates(\%templates, $locationPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "locateTemplates: if provided a valid templates hash with locations containing forward slashes, returns the expected identityToLocation hash and templates hash";
+	my %templates = ( "future" => "oh god I hope this works...LOCATION(\"futurama/zoidberg\")",
+					  "present" => "the location of this one is \"present/crabman\"LOCATION(\"present/crabman\")");
+	my $expected = "[ \"{ \"future\" => \"futurama/zoidberg\", \"present\" => \"present/crabman\" }\", \"{ \"future\" => \"oh god I hope this works...\", \"present\" => \"the location of this one is \"present/crabman\"\" }\" ]";
+	my $actual;
+	eval { $actual = stringifyArrayOfHashes([locateTemplates(\%templates, $locationPattern)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+# TODO: ignores templates with no location, errors on repeat locations
+
 
 # final results printout
 print("\nFINISHED\n");

@@ -84,7 +84,7 @@ use warnings;
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # matches LOCATION("LOCATION_NAME") and captures LOCATION_NAME into $1
-my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-]+)\"\)/;
+my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-\/]+)\"\)/;
 
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
@@ -128,7 +128,11 @@ sub locateTemplates {
 				$identity . " and " . $locationToIdentity{$location} . "\n");
 		}
 
-		$locationToIdentity{$location} = $identity;
+		# ignore templates with no location declared
+		if ($location ne "") {
+			$locationToIdentity{$location} = $identity;
+		}
+
 		$templates{$identity} = $template;
 	}
 
@@ -239,3 +243,5 @@ sub populateTemplate {
 }
 
 return 1; # to enable invoking this script with require
+
+# TODO: I gotta choose a tense and stick to it
