@@ -83,8 +83,8 @@ use warnings;
 # matches IDENTITY("IDENTITY_NAME") and captures IDENTITY_NAME into $1
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
-# TODO
-my $locationPattern = "";
+# matches LOCATION("LOCATION_NAME") and captures LOCATION_NAME into $1
+my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
@@ -122,9 +122,9 @@ sub locateTemplates {
 		(my $location, my $template) = extractPattern($templates{$identity}, $locationPattern, 1);
 
 		# throw an error if more than one template have the same location
-		if (defined($locationToIdentity($location))) {
+		if (defined($locationToIdentity{$location})) {
 			die("ERROR: More than one template located at \"" . $location . "\":" .
-				$identity . " and " . $locationToIdentity($location) . "\n");
+				$identity . " and " . $locationToIdentity{$location} . "\n");
 		}
 
 		$locationToIdentity{$location} = $identity;
@@ -134,7 +134,6 @@ sub locateTemplates {
 	my %identityToLocation = reverse %locationToIdentity;
 	return (\%identityToLocation, \%templates);
 }
-
 
 # find an instance of the given pattern within the given template, then return the captured
 # value and the template absent the found instance of the pattern
@@ -172,13 +171,13 @@ sub extractPattern {
 		# remove the pattern match from the template
 		$template = substr($template, 0, $start) . substr($template, $end);
 	}
-aa
+
 	# throw an error if less than one instance the pattern is found and one is required
 	if ($instances < 1 && $required) {
 		die("ERROR: No instance of pattern \"" . $pattern . "\" found in template.\n");
 	}
 
-	return ($catch, $template)
+	return ($catch, $template);
 }
 
 # invoke populateTemplate() once for each template in the given templates hash, then return the
