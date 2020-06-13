@@ -407,8 +407,48 @@ print("\n");
 	assertStringEquality($expected, substr($actual, 0, 53), $message) ? $successes++ : $failures++;
 }
 
+print("\n");
 
-# TODO: test joinOnIdentities, processTemplates
+# joinOnIdentities tests
+{
+	my $message = "joinOnIdentities: if provided two valid hashes, each with one entry for the same identity, returns expected locationToTemplate hash";
+	my %identityToLocation = ( "zoidberg" => "futurama/3005/test" );
+	my %identityToTemplate = ( "zoidberg" => "who else but crabman" );
+	my $expected = "{ \"futurama/3005/test\" => \"who else but crabman\" }";
+	my $actual;
+	eval { $actual = stringifyHash(joinOnIdentities(\%identityToLocation, \%identityToTemplate)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "joinOnIdentities: if provided two valid hashes that do not have a location for each identity, returns expected locationToTemplate hash";
+	my %identityToLocation = ( "zoidberg" => "futurama/3005/test",
+							   "bazinga" => "big/bang/theory");
+	my %identityToTemplate = ( "zoidberg" => "who else but crabman",
+							   "bazinga" => "sheldon cooper\n seldom pooper",
+							   "component" => "templates without locations can be used as dedicated components");
+	my $expected = "{ \"big/bang/theory\" => \"sheldon cooper\n seldom pooper\", \"futurama/3005/test\" => \"who else but crabman\" }";
+	my $actual;
+	eval { $actual = stringifyHash(joinOnIdentities(\%identityToLocation, \%identityToTemplate)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "joinOnIdentities: if provided two valid hashes that do not have a template for each identity, throws expected exception";
+	my %identityToLocation = ( "zoidberg" => "remember that weird mating ritual episode?",
+							   "doctor" => "I/hardly/know/her!",
+							   "doctor_doctor" => "give me the news");
+	my %identityToTemplate = ( "zoidberg" => "who else but the red crab doctor",
+							   "doctor_doctor" => "I got a bad case of lovin' you!");
+	my $expected = "ERROR: No template found with identity \"doctor\" and location \"I/hardly/know/her!\"\n";
+	my $actual;
+	eval { $actual = stringifyHash(joinOnIdentities(\%identityToLocation, \%identityToTemplate)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+# TODO: test processTemplates
 
 # final results printout
 print("\nFINISHED\n");

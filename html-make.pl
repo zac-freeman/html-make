@@ -116,6 +116,11 @@ sub joinOnIdentities {
 	foreach my $identity (keys %identityToLocation) {
 		my $location = $identityToLocation{$identity};
 		my $template = $identityToTemplate{$identity};
+
+		if (!defined($template)) {
+			die("ERROR: No template found with identity \"" . $identity . "\" and location \"" . $location . "\"\n");
+		}
+
 		$locationToTemplate{$location} = $template;
 	}
 
@@ -157,8 +162,8 @@ sub locateTemplates {
 
 		# throw an error if more than one template have the same location
 		if (defined($locationToIdentity{$location})) {
-			die("ERROR: More than one template located at \"" . $location . "\": " .
-				$identity . " and " . $locationToIdentity{$location} . "\n");
+			die("ERROR: More than one template located at \"" . $location . "\": \"" .
+				$identity . "\" and \"" . $locationToIdentity{$location} . "\"\n");
 		}
 
 		# exclude templates with no location declared from the locationToIdentity hash
@@ -180,7 +185,7 @@ sub extractPattern {
 	my $pattern = $_[1];	# regex to find a pattern and capture a value
 	my $required = $_[2];	# boolean to require at least one instance of pattern
 
-	my $catch;
+	my $catch = "";
 	my $instances = 0;
 	while ($template =~ $pattern) {
 		# throw error if more than one instances of the pattern is found
