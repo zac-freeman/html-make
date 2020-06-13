@@ -97,7 +97,7 @@ sub identifyTemplates {
 
 	my %templates;
 	foreach my $template (@templates) {
-		(my $identity, $template) = extractPattern($template, $identityPattern);
+		(my $identity, $template) = extractPattern($template, $identityPattern, 0);
 
 		# throw an error if more than one template have the same identity
 		if (defined($templates{$identity})) {
@@ -113,14 +113,13 @@ sub identifyTemplates {
 # invoke extractPattern(), with locationPattern, once for each template in the given templates hash,
 # correspond each template identity to a location, then return the hash corresponding identities to
 # locations and the hash corresponding identities to templates
-# TODO: a location is not required, need to add boolean to disable less-than-one check in extractPattern()
 sub locateTemplates {
 	my %templates = %{$_[0]};	 # hash corresponding identities to templates
 	my $locationPattern = $_[1]; # regex to capture locations declared in templates
 
 	my %locationToIdentity;
 	foreach my $identity (keys %templates) {
-		(my $location, my $template) = extractPattern($templates{$identity}, $locationPattern);
+		(my $location, my $template) = extractPattern($templates{$identity}, $locationPattern, 1);
 
 		# throw an error if more than one template have the same location
 		if (defined($locationToIdentity($location))) {
@@ -142,6 +141,7 @@ sub locateTemplates {
 sub extractPattern {
 	my $template = $_[0];	# contents of a template
 	my $pattern = $_[1];	# regex to find a pattern and capture a value
+	my $required = $_[2];	# boolean to require at least one instance of pattern
 
 	my $catch;
 	my $instances = 0;
@@ -172,9 +172,9 @@ sub extractPattern {
 		# remove the pattern match from the template
 		$template = substr($template, 0, $start) . substr($template, $end);
 	}
-
-	# throw an error if less than one instance the pattern is found
-	if ($instances < 1) {
+aa
+	# throw an error if less than one instance the pattern is found and one is required
+	if ($instances < 1 && $required) {
 		die("ERROR: No instance of pattern \"" . $pattern . "\" found in template.\n");
 	}
 
