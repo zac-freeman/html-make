@@ -203,7 +203,7 @@ sub extractPattern {
 		# if the pattern match is alone on the line, remove at most one of the surrounding
 		# newlines
 		if (($start == 0 || substr($template, $start - 1, 1) eq "\n") &&
-			($end == length($template) - 1 || substr($template, $end, 1) eq "\n")) {
+			($end == length($template) || substr($template, $end, 1) eq "\n")) {
 			if ($start > 0) {
 				$start--;
 			} elsif ($end < length($template) - 1) {

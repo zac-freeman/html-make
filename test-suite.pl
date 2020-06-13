@@ -229,8 +229,8 @@ print("\n");
 
 {
 	my $message = "extractPattern: if provided template containing one identity declaration alone on the last line, returns expected identity and template";
-	my $template = "this is the first line\nthis is the middle line\nthis is the IDENTITY(\"zoidberg\") line";
-	my $expected = "[ \"this is the first line\nthis is the middle line\nthis is the  line\", \"zoidberg\" ]";
+	my $template = "this is the first line\nthis is the middle line\nIDENTITY(\"zoidberg\")";
+	my $expected = "[ \"this is the first line\nthis is the middle line\", \"zoidberg\" ]";
 	my $actual;
 	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
@@ -300,7 +300,7 @@ print("\n");
 {
 	my $message = "extractPattern: if provided a template with a location declaration when it isn't required, returns expected location and template";
 	my $template = "wants\nneeds\ndesires\nLOCATION(\"top\")";
-	my $expected = "[ \"top\", \"wants\nneeds\ndesires\n\" ]";
+	my $expected = "[ \"top\", \"wants\nneeds\ndesires\" ]";
 	my $actual;
 	eval { $actual = stringifyArray([extractPattern($template, $locationPattern, 0)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
@@ -448,7 +448,22 @@ print("\n");
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
-# TODO: test processTemplates
+
+print("\n");
+
+# processTemplates tests
+{
+	my $message = "processTemplates: if provided a list of identified, located templates with no dependencies, returns expected locationToTemplate hash";
+	my @templates = ( "IDENTITY(\"identityOne\")\nLOCATION(\"locationOne\")\ncontentOne",
+					  "contentTwo\nLOCATION(\"locationTwo\")\nIDENTITY(\"identityTwo\")",
+					  "LOCATION(\"locationThree\")IDENTITY(\"identityThree\")contentThree");
+	my $cycleCheckEnabled = 1;
+	my $expected = "{ \"locationOne\" => \"contentOne\", \"locationThree\" => \"contentThree\", \"locationTwo\" => \"contentTwo\" }";
+	my $actual;
+	eval { $actual = stringifyHash(processTemplates(\@templates, $identityPattern, $locationPattern, $dependencyPattern, $cycleCheckEnabled)); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
 
 # final results printout
 print("\nFINISHED\n");
