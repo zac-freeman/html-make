@@ -11,6 +11,7 @@ my $failures = 0;
 
 # reusable variables
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
+my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-]+)\"\)/;
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # tests equality of two given strings
@@ -279,6 +280,26 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
+{
+	my $message = "extractPattern: if provided a template with no location declaration when it isn't required, returns expected location and template";
+	my $template = "this can be anything it wants\n\n\n";
+	my $expected = "[ \"\", \"this can be anything it wants\n\n\n\" ]";
+	my $actual;
+	eval { $actual = stringifyArray([extractPattern($template, $locationPattern, 0)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
+{
+	my $message = "extractPattern: if provided a template with a location declaration when it isn't required, returns expected location and template";
+	my $template = "wants\nneeds\ndesires\nLOCATION(\"top\")";
+	my $expected = "[ \"top\", \"wants\nneeds\ndesires\n\" ]";
+	my $actual;
+	eval { $actual = stringifyArray([extractPattern($template, $locationPattern, 0)]); };
+	$actual = $EVAL_ERROR if $EVAL_ERROR;
+	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
+}
+
 print("\n");
 
 #identifyTemplates tests
@@ -331,9 +352,8 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
-# TODO: make tests for extractPattern using other patterns
-# TODO: how the FUCK do I abstract the three common $actual lines?
-
+# locateTemplates tests
+# TODO
 
 # final results printout
 print("\nFINISHED\n");
