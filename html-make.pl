@@ -57,8 +57,8 @@ use warnings;
 #		processFiles(String path) - write(locate(populate(read(root_folder_path))))
 
 # syntax consideration:
-# 	Should be easy to understand and write. Should intersect with the syntax of other languages
-#	(especially HTML and CSS)
+# 	Should be easy to understand and write. Should not intersect with the syntax of other
+#	languages (especially HTML and CSS)
 #
 # internet aspect:
 # option to cache external/web references in the project structure, store cached content in
@@ -79,6 +79,8 @@ use warnings;
 # I think it makes sense to have locateTemplates() operate on a hash of identified templates, their
 # identities are essentially the unique key to each template, and I can reasonably expect any future
 # attribute to operate on the hash of identified templates.
+#
+# choose a tense for comments and stick with it!!
 
 # matches IDENTITY("IDENTITY_NAME") and captures IDENTITY_NAME into $1
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
@@ -113,7 +115,7 @@ sub identifyTemplates {
 # invoke extractPattern(), with locationPattern, once for each template in the given templates hash,
 # correspond each template identity to a location, then return the hash corresponding identities to
 # locations and the hash corresponding identities to templates
-# NOTE: a template is not required to have a template
+# NOTE: a template is not required to have a location
 sub locateTemplates {
 	my %templates = %{$_[0]};	 # hash corresponding identities to templates
 	my $locationPattern = $_[1]; # regex to capture locations declared in templates
@@ -124,11 +126,11 @@ sub locateTemplates {
 
 		# throw an error if more than one template have the same location
 		if (defined($locationToIdentity{$location})) {
-			die("ERROR: More than one template located at \"" . $location . "\":" .
+			die("ERROR: More than one template located at \"" . $location . "\": " .
 				$identity . " and " . $locationToIdentity{$location} . "\n");
 		}
 
-		# ignore templates with no location declared
+		# exclude templates with no location declared from the locationToIdentity hash
 		if ($location ne "") {
 			$locationToIdentity{$location} = $identity;
 		}
@@ -243,5 +245,3 @@ sub populateTemplate {
 }
 
 return 1; # to enable invoking this script with require
-
-# TODO: I gotta choose a tense and stick to it
