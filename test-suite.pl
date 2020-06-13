@@ -204,7 +204,7 @@ print("\n");
 	my $template = "IDENTITY(\"bazinga\")\nThe whole universe was in a hot dense state...";
 	my $expected = "[ \"The whole universe was in a hot dense state...\", \"bazinga\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -214,7 +214,7 @@ print("\n");
 	my $template = "this is the first line\nIDENTITY(\"middle\")\nthis is the last line";
 	my $expected = "[ \"middle\", \"this is the first line\nthis is the last line\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -224,7 +224,7 @@ print("\n");
 	my $template = "this is the first line\nthis is the middle line\nthis is the IDENTITY(\"zoidberg\") line";
 	my $expected = "[ \"this is the first line\nthis is the middle line\nthis is the  line\", \"zoidberg\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -234,7 +234,7 @@ print("\n");
 	my $template = "today is a IDENTITY(\"zoidberg\") reference kind of day";
 	my $expected = "[ \"today is a  reference kind of day\", \"zoidberg\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -244,7 +244,7 @@ print("\n");
 	my $template = "this is the first line\nthis is the IDENTITY(\"zoidberg\") line\nthis is the last line";
 	my $expected = "[ \"this is the first line\nthis is the  line\nthis is the last line\", \"zoidberg\" ]";
 	my $actual;
-	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -254,7 +254,7 @@ print("\n");
 	my $template = "What a fine court, too, that requires such an explanation!";
 	my $expected = "ERROR: No instance of pattern \"(?^:IDENTITY\\(\\\"([0-9a-zA-Z._\\-]+)\\\"\\))\" found in template.\n";
 	my $actual;
-	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -264,7 +264,7 @@ print("\n");
 	my $template = "Who else, but IDENTITY(\"zoidberg\"), and his sidekick IDENTITY(\"boy-dberg\")";
 	my $expected = "ERROR: More than one instance of pattern \"(?^:IDENTITY\\(\\\"([0-9a-zA-Z._\\-]+)\\\"\\))\" found in template with first catch \"zoidberg\"\n";
 	my $actual;
-	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
@@ -274,7 +274,7 @@ print("\n");
 	my $template = "";
 	my $expected = "ERROR: No instance of pattern \"(?^:IDENTITY\\(\\\"([0-9a-zA-Z._\\-]+)\\\"\\))\" found in template.\n";
 	my $actual;
-	eval { $actual = stringifyArray([extractPattern($template, $identityPattern)]); };
+	eval { $actual = stringifyArray([extractPattern($template, $identityPattern, 1)]); };
 	$actual = $EVAL_ERROR if $EVAL_ERROR;
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
