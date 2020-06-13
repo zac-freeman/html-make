@@ -79,8 +79,6 @@ use warnings;
 # I think it makes sense to have locateTemplates() operate on a hash of identified templates, their
 # identities are essentially the unique key to each template, and I can reasonably expect any future
 # attribute to operate on the hash of identified templates.
-#
-# choose a tense for comments and stick with it!!
 
 # matches IDENTITY("IDENTITY_NAME") and captures IDENTITY_NAME into $1
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
@@ -91,8 +89,41 @@ my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-\/]+)\"\)/;
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
-# invoke extractPattern(), with identityPattern, once for each template in the given templates
-# array, then return the templates hash associating identities to template contents
+# identifies, locates, and populates a given array of templates using the given patterns, then
+# returns a hash corresponding locations to templates
+sub processTemplates {
+	my @templates = @{$_[0]};		# array of template contents
+	my $indentityPattern = $_[1];	# regex to capture identities declared in templates
+	my $locationPattern = $_[2];	# regex to capture locations declared in templates
+	my $dependencyPattern = $_[3];	# regex to capture dependencies declared in templates
+	my $cycleCheckEnabled = $_[4];	# boolean to enable cyclic depedency checking
+
+	my $templates;			# REFERENCE to a hash of identities to templates
+	my $identityToLocation; # REFERENCE to a hash of identities to locations
+	$templates = identifyTemplates(\@templates, $identityPattern);
+	($identityToLocation, $templates) = locateTemplates($templates, $locationPattern);
+	$templates = populateTemplates($templates, $dependencyPattern, $cycleCheckEnabled);
+	return joinOnIdentities($identityToLocation, $templates);
+}
+
+# joins the given identityToLocation hash and identityToTemplate hash on their keys, then returns a
+# hash corresponding locations to templates
+sub joinOnIdentities {
+	my %identityToLocation = %{$_[0]};	# hash corresponding identities to locations
+	my %identityToTemplate = %{$_[1]};	# hash corresponding identities to templates
+
+	my %locationToTemplate;
+	foreach my $identity (keys %identityToLocation) {
+		my $location = $identityToLocation{$identity};
+		my $template = $identityToTemplate{$identity};
+		$locationToTemplate{$location} = $template;
+	}
+
+	return \%locationToTemplate;
+}
+
+# invokes extractPattern(), with identityPattern, once for each template in the given templates
+# array, then returns the templates hash associating identities to template contents
 sub identifyTemplates {
 	my @templates = @{$_[0]};	 # array containing template contents
 	my $identityPattern = $_[1]; # regex to capture identities declared in templates
@@ -112,9 +143,9 @@ sub identifyTemplates {
 	return \%templates;
 }
 
-# invoke extractPattern(), with locationPattern, once for each template in the given templates hash,
-# correspond each template identity to a location, then return the hash corresponding identities to
-# locations and the hash corresponding identities to templates
+# invokes extractPattern(), with locationPattern, once for each template in the given templates
+# hash, corresponds each template identity to a location, then returns the hash corresponding
+# identities to locations and the hash corresponding identities to templates
 # NOTE: a template is not required to have a location
 sub locateTemplates {
 	my %templates = %{$_[0]};	 # hash corresponding identities to templates
@@ -142,7 +173,7 @@ sub locateTemplates {
 	return (\%identityToLocation, \%templates);
 }
 
-# find an instance of the given pattern within the given template, then return the captured
+# finds an instance of the given pattern within the given template, then returns the captured
 # value and the template absent the found instance of the pattern
 sub extractPattern {
 	my $template = $_[0];	# contents of a template
@@ -187,7 +218,7 @@ sub extractPattern {
 	return ($catch, $template);
 }
 
-# invoke populateTemplate() once for each template in the given templates hash, then return the
+# invokes populateTemplate() once for each template in the given templates hash, then returns the
 # populated templates hash
 sub populateTemplates {
 	my %templates = %{$_[0]};		# hash corresponding template names to template contents
@@ -202,9 +233,9 @@ sub populateTemplates {
 	return \%templates;
 }
 
-# find instances of the given dependencyPattern within the given template and replace each of the
+# finds instances of the given dependencyPattern within the given template and replaces each of the
 # found instances with the contents corresponding to the instance's dependencyName in the given
-# templates hash, then return the populated template
+# templates hash, thens return the populated template
 sub populateTemplate {
 	my $template = $_[0];			# contents of a template
 	my $templates = $_[1];			# REFERENCE to a hash of template names to template contents
