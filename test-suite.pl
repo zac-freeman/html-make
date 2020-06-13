@@ -408,6 +408,8 @@ print("\n");
 }
 
 
+# TODO: test joinOnIdentities, processTemplates
+
 # final results printout
 print("\nFINISHED\n");
 print("    SUCCESSES - " . $successes . "\n");
