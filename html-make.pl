@@ -12,8 +12,32 @@ my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-\/]+)\"\)/;
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # TODO: CLI
-# TODO: read files at directory
 # TODO: write files at directory
+
+
+# reads all files within a given location, then returns their contents as an array of strings
+sub readFiles {
+	my $location = $_[0];
+
+	# if there is a regular file at the location, return its contents
+	if (-f $location) {
+		return [readFile($location)];
+	}
+
+	# get the list of file names in the directory at the given location
+	my @files = @{readDirectory($location)};
+
+	# for each file in the directory (excluding . and ..),
+	# read its content(s) and add it to contents
+	my @contents;
+	foreach my $file (@files) {
+		if ($file ne "." && $file ne "..") {
+			push(@contents, @{readFiles($location . "/" . $file)});
+		}
+	}
+
+	return \@contents;
+}
 
 # reads a file at a given location, then returns the content as a string
 sub readFile {
@@ -34,6 +58,24 @@ sub readFile {
 		or die("ERROR: Unable to close file at \"" . $location . "\"\n");
 
 	return $content;
+}
+
+# reads all the file names in the directory at the given location,
+# then returns them as an array of strings
+sub readDirectory {
+	my $location = $_[0];
+
+	# open the directory, throw an error if unable to open
+	opendir(my $directory, $location)
+		or die("ERROR: Unable to open directory at \"" . $location . "\"\n");
+
+	my @files = readdir($directory);
+
+	# close the directory, throw an error if unable to close
+	closedir($directory)
+		or die("ERROR: Unable to close directory at \"" . $location . "\"\n");
+
+	return \@files;
 }
 
 # identifies, locates, and populates a given array of templates using the given patterns, then
