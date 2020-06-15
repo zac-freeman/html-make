@@ -69,6 +69,7 @@ sub readDirectory {
 	opendir(my $directory, $location)
 		or die("ERROR: Unable to open directory at \"" . $location . "\"\n");
 
+	# get the list of file names in the directory
 	my @files = readdir($directory);
 
 	# close the directory, throw an error if unable to close
