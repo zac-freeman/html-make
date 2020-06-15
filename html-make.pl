@@ -11,6 +11,31 @@ my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-\/]+)\"\)/;
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
+# TODO: CLI
+# TODO: read files at directory
+# TODO: write files at directory
+
+# reads a file at a given location, then returns the content as a string
+sub readFile {
+	my $location = $_[0];
+
+	# open the file to read, throw an error if unable to read
+	open(my $handle, "<", $location)
+		or die("ERROR: Unable to read file at \"" . $location . "\"\n");
+
+	# read the file into content
+	my $content = "";
+	while (my $line = <$handle>) {
+		$content = $content . $line;
+	}
+
+	# close the file, throw an error if unable to close
+	close($handle)
+		or die("ERROR: Unable to close file at \"" . $location . "\"\n");
+
+	return $content;
+}
+
 # identifies, locates, and populates a given array of templates using the given patterns, then
 # returns a hash corresponding locations to templates
 sub processTemplates {
@@ -39,6 +64,7 @@ sub joinOnIdentities {
 		my $location = $identityToLocation{$identity};
 		my $template = $identityToTemplate{$identity};
 
+		# throw an error if there is an identity key in identityToLocation that is not in identityToTemplate
 		if (!defined($template)) {
 			die("ERROR: No template found with identity \"" . $identity . "\" and location \"" . $location . "\"\n");
 		}
@@ -201,5 +227,3 @@ sub populateTemplate {
 
 	return $template;
 }
-
-return 1; # to enable invoking this script with require
