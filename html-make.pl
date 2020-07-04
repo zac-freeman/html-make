@@ -14,7 +14,6 @@ my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 # TODO: CLI
 # TODO: write files at directory
 
-
 # reads all files within a given location, then returns their contents as an array of strings
 sub readFiles {
 	my $location = $_[0];
@@ -30,10 +29,8 @@ sub readFiles {
 	# for each file in the directory (excluding . and ..),
 	# read its content(s) and add it to contents
 	my @contents;
-	foreach my $file (@files) {
-		if ($file ne "." && $file ne "..") {
-			push(@contents, @{readFiles($location . "/" . $file)});
-		}
+	foreach my $file (grep {$_ ne "." && $_ ne ".."} @files) {
+		push(@contents, @{readFiles($location . "/" . $file)});
 	}
 
 	return \@contents;
