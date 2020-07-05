@@ -12,7 +12,41 @@ my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-\/]+)\"\)/;
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
 # TODO: CLI
-# TODO: write files at directory
+
+# writes the contents to the corresponding location for each entry in the given hash 
+sub writeFiles {
+	my %locationToContent = %{$_[0]};
+
+	foreach my $location (keys %locationToContent) {
+		writeFile($location, $locationToContent{$location});
+	}
+}
+
+# writes the given content into a file created at the given location
+sub writeFile {
+	my $location = $_[0];
+	my $content = $_[1];
+
+	# gets the list of directories in the path to the file location
+	# and creates each one that does not already exist
+	my @directories = splice(@{[split(/\//, $location)]}, 0, -1);
+	my $path = "";
+	foreach my $directory (@directories) {
+		$path = $path . $directory . "/";
+		if (!-e $path) {
+			mkdir($path);
+		}
+	}
+
+	# open or create file to write to, throw an error if unable to read
+	open(my $handle, ">", $location)
+		or die("ERROR: Unable to create or open file at \"" . $location . "\"\n");
+
+	print $handle $content;
+
+	close($handle)
+		or die("ERROR: Unable to close file at \"" . $location . "\"\n"); 
+}
 
 # reads all files within a given location, then returns their contents as an array of strings
 sub readFiles {
