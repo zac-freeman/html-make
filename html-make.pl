@@ -2,6 +2,11 @@
 use strict;
 use warnings;
 
+# TODO: add comments to function parameters
+# TODO: consider switching instances of foreach to for
+
+handleArguments(\@ARGV);
+
 # matches IDENTITY("IDENTITY_NAME") and captures IDENTITY_NAME into $1
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
@@ -11,7 +16,73 @@ my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-\/]+)\"\)/;
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
-# TODO: CLI
+# handles the input from the command line
+sub handleArguments {
+	my @arguments = @{$_[0]};
+
+	my $cycleCheckEnabled = 0;
+	my $source;
+	my $destination;
+
+	foreach my $argument (@arguments) {
+		if ($argument eq "--help") {
+			printGuide();
+			return;
+		}
+
+		if ($argument eq "--no-cycle-check") {
+			$cycleCheckEnabled = 1;
+			next;
+		}
+
+		if (substr($argument, 0, 1) eq "-") {
+			print("Unrecognized argument: \"" . $argument . "\"\n");
+			printHelp();
+			return;
+		}
+
+		if (!defined($source)) {
+			$source = $argument;
+			next;
+		}
+
+		if (!defined($destination)) {
+			$destination = $argument;
+			next;
+		}
+
+		print("Too many arguments.\n");
+		printHelp();
+		return;
+	}
+
+	if (!defined($source) || !defined($destination)) {
+		print("Too few arguments.\n");
+		printHelp();
+		return
+	}
+
+	my @templates = @{readFiles($source)};
+	my %templates = %{processTemplates(\@templates)};
+	foreach my $location (keys %templates) {
+		$templates{$source + $location} = delete $templates{$location};
+	}
+	writeFiles(\%templates);
+}
+
+# prints the usage error message to the terminal
+sub printHelp {
+	print("Try \"html-make.pl --help\" for more information.\n");
+}
+
+# prints the usage guide to the terminal
+sub printGuide {
+	print("Usage: html-make.pl [OPTION] SOURCE DESTINATION\n");
+	print("Create content at DESTINATION from templates at SOURCE\n");
+	print("\n");
+	print("--no-cycle-check  Disable checking for cyclic dependencies\n");
+	print("--help            Print this guide and exit\n");
+}
 
 # writes the contents to the corresponding location for each entry in the given hash 
 sub writeFiles {
