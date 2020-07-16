@@ -5,8 +5,6 @@ use warnings;
 # TODO: add comments to function parameters
 # TODO: consider switching instances of foreach to for
 
-handleArguments(\@ARGV);
-
 # matches IDENTITY("IDENTITY_NAME") and captures IDENTITY_NAME into $1
 my $identityPattern = qr/IDENTITY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
@@ -16,9 +14,15 @@ my $locationPattern = qr/LOCATION\(\"([0-9a-zA-Z._\-\/]+)\"\)/;
 # matches DEPENDENCY("DEPENDENCY_NAME") and captures DEPENDENCY_NAME into $1
 my $dependencyPattern = qr/DEPENDENCY\(\"([0-9a-zA-Z._\-]+)\"\)/;
 
+# this is where the magic happens
+handleArguments(\@ARGV, $identityPattern, $locationPattern, $dependencyPattern);
+
 # handles the input from the command line
 sub handleArguments {
 	my @arguments = @{$_[0]};
+	my $indentityPattern = $_[1];	# regex to capture identities declared in templates
+	my $locationPattern = $_[2];	# regex to capture locations declared in templates
+	my $dependencyPattern = $_[3];	# regex to capture dependencies declared in templates
 
 	my $cycleCheckEnabled = 0;
 	my $source;
@@ -63,9 +67,9 @@ sub handleArguments {
 	}
 
 	my @templates = @{readFiles($source)};
-	my %templates = %{processTemplates(\@templates)};
+	my %templates = %{processTemplates(\@templates, $identityPattern, $locationPattern, $dependencyPattern, $cycleCheckEnabled)};
 	foreach my $location (keys %templates) {
-		$templates{$source + $location} = delete $templates{$location};
+		$templates{$destination . "/" . $location} = delete $templates{$location};
 	}
 	writeFiles(\%templates);
 }
