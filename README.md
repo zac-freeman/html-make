@@ -13,4 +13,4 @@ Unit tests can be run with `perl ./test-suite.pl`.
 A simple test of functionality can be performed with `perl ./html-make sample-source/ sample-output/`. There should be one file located at ./sample-output/final-template.html containing some simple, valid, jovial HTML.
 
 ## Questions and concerns
-If you're actually using this and having problems, please message me! It would do incredible things for my ego to know that someone was voluntarily using something I wrote and I would greatly appreciate having this script "battle-tested".
+If you're actually using this and having problems, please create an issue or message me! It would do incredible things for my ego to know that someone was voluntarily using something I wrote and I would greatly appreciate having this script "battle-tested".
