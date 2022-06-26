@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 
+# TODO: add `EXISTS` (or similar) function to check existence of media files
 # TODO: add comments to function parameters
 # TODO: consider switching instances of foreach to for
 
