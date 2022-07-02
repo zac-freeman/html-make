@@ -1,5 +1,5 @@
 # html-make
-A Perl (five) script designed to enable templating of HTML without the use of javascript. Truthfully, it could be used to enable templating for any kind of text file, but HTML is one of few languages that could make use of templating and has no native support for such a thing (Rest in Peace HTML Imports, 2011-2016ish)
+A Perl (five) for templating HTML without the use of javascript. Truthfully, it could be used to enable templating for any kind of text file, but HTML is one of few languages that could make use of templating and has no native support for such a thing (Rest in Peace HTML Imports, 2011-2016ish)
 
 ## Using it
 There are three patterns that are recognized by the script: `IDENTITY("string")`, `DEPENDENCY("string")`, and `LOCATION("string")`.
