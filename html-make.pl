@@ -2,7 +2,6 @@
 use strict;
 use warnings;
 
-# TODO: add `--ignore` argument to enable ignoring FUCKING .swp files
 # TODO: add `EXISTS` (or similar) function to check existence of media files
 # TODO: add comments to function parameters
 # TODO: consider switching instances of foreach to for
@@ -27,6 +26,7 @@ sub handleArguments {
 	my $dependencyPattern = $_[3];	# regex to capture dependencies declared in templates
 
 	my $cycleCheckEnabled = 0;
+	my @excludePatterns;
 	my $source;
 	my $destination;
 
@@ -38,6 +38,12 @@ sub handleArguments {
 
 		if ($argument eq "--no-cycle-check") {
 			$cycleCheckEnabled = 1;
+			next;
+		}
+
+		if ($argument =~ qr/\-\-exclude\=(.*)/) {
+			my $catch = $1;
+			push(@excludePatterns, $catch);
 			next;
 		}
 
@@ -68,7 +74,9 @@ sub handleArguments {
 		return
 	}
 
-	my @templates = @{readFiles($source)};
+	my @files = @{getFiles($source)};
+	@files = @{filterFiles(\@files, \@excludePatterns)};
+	my @templates = @{readFiles(\@files)};
 	my %templates = %{processTemplates(\@templates, $identityPattern, $locationPattern, $dependencyPattern, $cycleCheckEnabled)};
 	foreach my $location (keys %templates) {
 		$templates{$destination . "/" . $location} = delete $templates{$location};
@@ -86,8 +94,9 @@ sub printGuide {
 	print("Usage: html-make.pl [OPTION] SOURCE DESTINATION\n");
 	print("Create content at DESTINATION from templates at SOURCE\n");
 	print("\n");
-	print("--no-cycle-check  Disable checking for cyclic dependencies\n");
-	print("--help            Print this guide and exit\n");
+	print("--no-cycle-check Disable checking for cyclic dependencies\n");
+	print("--exclude=REGEX  Skip any file that matches the given perl regex pattern.\n");
+	print("--help           Print this guide and exit\n");
 }
 
 # writes the contents to the corresponding location for each entry in the given hash 
@@ -125,23 +134,60 @@ sub writeFile {
 		or die("ERROR: Unable to close file at \"" . $location . "\"\n"); 
 }
 
-# reads all files within a given location, then returns their contents as an array of strings
-sub readFiles {
+# gets all the file locations at and under the given location,
+# then returns them as an array of strings
+sub getFiles {
 	my $location = $_[0];
 
-	# if there is a regular file at the location, return its contents
+	# if there is a regular file at the location, return its location
 	if (-f $location) {
-		return [readFile($location)];
+		return [$location];
 	}
 
-	# get the list of file names in the directory at the given location
-	my @files = @{readDirectory($location)};
+	# open the directory, throw an error if unable to open
+	opendir(my $directory, $location)
+		or die("ERROR: Unable to open directory at \"" . $location . "\"\n");
+
+	# get the list of file names in the directory
+	my @files;
+	foreach my $file (grep {$_ ne "." && $_ ne ".."} readdir($directory)) {
+		push(@files, @{getFiles($location . "/" . $file)});
+	}
+
+	# close the directory, throw an error if unable to close
+	closedir($directory)
+		or die("ERROR: Unable to close directory at \"" . $location . "\"\n");
+
+	return \@files;
+}
+
+# filters out any of the given locations that match any of the given patterns,
+# then returns the remainder
+sub filterFiles {
+	my @locations = @{$_[0]};
+	my @excludePatterns = @{$_[1]};
+
+	# return the original list if there is nothing to filter on
+	if (@excludePatterns == 0) {
+		return \@locations;
+	}
+
+	my $filter = join("|", @excludePatterns);
+	my @files = grep(!/$filter/, @locations);
+
+	return \@files;
+}
+
+# reads files from a list of locations,
+# then returns their contents as an array of strings
+sub readFiles {
+	my @locations = @{$_[0]};
 
 	# for each file in the directory (excluding . and ..),
 	# read its content(s) and add it to contents
 	my @contents;
-	foreach my $file (grep {$_ ne "." && $_ ne ".."} @files) {
-		push(@contents, @{readFiles($location . "/" . $file)});
+	foreach my $location (@locations) {
+		push(@contents, readFile($location));
 	}
 
 	return \@contents;
@@ -166,25 +212,6 @@ sub readFile {
 		or die("ERROR: Unable to close file at \"" . $location . "\"\n");
 
 	return $content;
-}
-
-# reads all the file names in the directory at the given location,
-# then returns them as an array of strings
-sub readDirectory {
-	my $location = $_[0];
-
-	# open the directory, throw an error if unable to open
-	opendir(my $directory, $location)
-		or die("ERROR: Unable to open directory at \"" . $location . "\"\n");
-
-	# get the list of file names in the directory
-	my @files = readdir($directory);
-
-	# close the directory, throw an error if unable to close
-	closedir($directory)
-		or die("ERROR: Unable to close directory at \"" . $location . "\"\n");
-
-	return \@files;
 }
 
 # identifies, locates, and populates a given array of templates using the given patterns, then

@@ -1,0 +1,6 @@
+IDENTITY("head")
+<head>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<title>html-make sample</title>
+	<description>Vim's use of .swp files necessitated the addition of the --excludes flag</description>
+</head>

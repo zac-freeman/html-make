@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use English;
 
-require "./html-make.pl";
+eval { require "./html-make.pl"; };
 
 # test metrics
 my $successes = 0;
@@ -478,6 +478,10 @@ print("\n");
 	assertStringEquality($expected, $actual, $message) ? $successes++ : $failures++;
 }
 
+print("\n");
+
+#filterFiles tests
+# TODO
 
 # final results printout
 print("\nFINISHED\n");

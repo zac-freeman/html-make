@@ -21,7 +21,7 @@ This script is run on the command line and expects to be invoked in the form `pe
 ## Testing it
 Unit tests can be run with `perl ./test-suite.pl`.
 
-A simple test of functionality can be performed with `perl ./html-make sample-source/ sample-output/`. There should be one file located at `./sample-output/final-template.html` containing some simple, valid, jovial HTML.
+A simple test of functionality can be performed with `perl ./html-make --exclude=.*swp --exclude=exact.html sample-source/ sample-output/`. There should be one file located at `./sample-output/final-template.html` containing some simple, valid, jovial HTML.
 
 ## I know
 Yes, this has been done a million times before. It turns out even the [Perl docs](https://perldoc.perl.org/) are built with a Perl plaintext templating script. However, this script is lightweight and requires only the `perl` command line tool to run.
